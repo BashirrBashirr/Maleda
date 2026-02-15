@@ -439,5 +439,236 @@
       <span style="margin-left: auto;">© raul demo</span>
     </div>
   </div>
+  <!-- Add this to your site, right before the closing </body> tag -->
+
+<!-- Snake Game Container -->
+<div style="margin-top: 3rem; text-align: center; position: relative; z-index: 30;">
+  <h3 style="font-size: 1.2rem; font-weight: 380; color: #1b8c5a; margin-bottom: 1rem;">
+    <span class="grid__bullet" style="display: inline-block; margin-right: 8px;"></span>
+    play ethiopian snake
+    <span class="grid__bullet yellow" style="display: inline-block; margin-left: 8px;"></span>
+  </h3>
+  
+  <canvas id="snakeGame" width="400" height="400" style="
+    border-radius: 24px;
+    background: rgba(255, 255, 255, 0.3);
+    backdrop-filter: blur(8px);
+    box-shadow: 0 20px 40px -20px rgba(0,0,0,0.3);
+    border: 1px solid rgba(27, 140, 90, 0.2);
+    width: 100%;
+    max-width: 400px;
+    height: auto;
+    cursor: pointer;
+  "></canvas>
+  
+  <div style="margin-top: 0.8rem; font-size: 0.8rem; color: #90a095;">
+    <span class="dot-green" style="display: inline-block; width: 12px; height: 12px; border-radius: 50%; background: #1b8c5a; margin: 0 4px;"></span>
+    <span class="dot-yellow" style="display: inline-block; width: 12px; height: 12px; border-radius: 50%; background: #f3b83a; margin: 0 4px;"></span>
+    <span class="dot-red" style="display: inline-block; width: 12px; height: 12px; border-radius: 50%; background: #da3e2d; margin: 0 4px;"></span>
+    arrow keys to move · space to restart
+  </div>
+</div>
+
+<script>
+// JavaScript Snake Game (Ethiopian colors edition)
+(function() {
+  const canvas = document.getElementById('snakeGame');
+  if (!canvas) return;
+  
+  const ctx = canvas.getContext('2d');
+  
+  // Ethiopian colors
+  const GREEN = '#1b8c5a';
+  const YELLOW = '#f3b83a';
+  const RED = '#da3e2d';
+  
+  // Game settings
+  const gridSize = 20;
+  const tileCount = canvas.width / gridSize;
+  
+  let snake = [
+    {x: 10, y: 10}
+  ];
+  let direction = {x: 0, y: 0};
+  let food = {x: 15, y: 15};
+  let score = 0;
+  let gameRunning = true;
+  
+  // Generate random food
+  function randomFood() {
+    food.x = Math.floor(Math.random() * tileCount);
+    food.y = Math.floor(Math.random() * tileCount);
+    
+    // Make sure food doesn't spawn on snake
+    for (let segment of snake) {
+      if (segment.x === food.x && segment.y === food.y) {
+        randomFood();
+        return;
+      }
+    }
+  }
+  
+  // Game loop
+  function gameLoop() {
+    if (!gameRunning) return;
+    
+    // Move snake
+    const head = {x: snake[0].x + direction.x, y: snake[0].y + direction.y};
+    
+    // Check wall collision
+    if (head.x < 0 || head.x >= tileCount || head.y < 0 || head.y >= tileCount) {
+      gameRunning = false;
+      draw();
+      return;
+    }
+    
+    // Check self collision
+    for (let segment of snake) {
+      if (head.x === segment.x && head.y === segment.y) {
+        gameRunning = false;
+        draw();
+        return;
+      }
+    }
+    
+    snake.unshift(head);
+    
+    // Check food collision
+    if (head.x === food.x && head.y === food.y) {
+      score++;
+      randomFood();
+    } else {
+      snake.pop();
+    }
+    
+    draw();
+    setTimeout(gameLoop, 100);
+  }
+  
+  // Drawing function
+  function draw() {
+    // Clear canvas with glass effect
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    // Draw subtle grid
+    ctx.strokeStyle = GREEN + '20';
+    ctx.lineWidth = 0.5;
+    for (let i = 0; i <= tileCount; i++) {
+      ctx.beginPath();
+      ctx.moveTo(i * gridSize, 0);
+      ctx.lineTo(i * gridSize, canvas.height);
+      ctx.stroke();
+      
+      ctx.beginPath();
+      ctx.moveTo(0, i * gridSize);
+      ctx.lineTo(canvas.width, i * gridSize);
+      ctx.stroke();
+    }
+    
+    // Draw food (yellow with red outline)
+    ctx.fillStyle = YELLOW;
+    ctx.fillRect(food.x * gridSize, food.y * gridSize, gridSize - 1, gridSize - 1);
+    ctx.strokeStyle = RED;
+    ctx.lineWidth = 2;
+    ctx.strokeRect(food.x * gridSize - 1, food.y * gridSize - 1, gridSize + 1, gridSize + 1);
+    
+    // Draw snake
+    for (let i = 0; i < snake.length; i++) {
+      const segment = snake[i];
+      
+      // Color based on position (green head, gradient body)
+      if (i === 0) {
+        ctx.fillStyle = GREEN;
+        ctx.fillRect(segment.x * gridSize, segment.y * gridSize, gridSize - 1, gridSize - 1);
+        
+        // Eyes
+        ctx.fillStyle = YELLOW;
+        ctx.fillRect(segment.x * gridSize + 5, segment.y * gridSize + 5, 4, 4);
+        ctx.fillRect(segment.x * gridSize + 11, segment.y * gridSize + 5, 4, 4);
+      } else {
+        // Gradient through Ethiopian colors
+        const ratio = i / snake.length;
+        if (ratio < 0.33) ctx.fillStyle = GREEN;
+        else if (ratio < 0.66) ctx.fillStyle = YELLOW;
+        else ctx.fillStyle = RED;
+        
+        ctx.fillRect(segment.x * gridSize, segment.y * gridSize, gridSize - 1, gridSize - 1);
+        
+        // Glass effect
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
+        ctx.fillRect(segment.x * gridSize + 3, segment.y * gridSize + 3, gridSize - 8, 2);
+      }
+    }
+    
+    // Draw score with glass background
+    ctx.font = 'bold 20px Inter, system-ui';
+    const scoreText = score.toString();
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+    ctx.fillRect(canvas.width - 60, 10, 50, 30);
+    ctx.fillStyle = GREEN;
+    ctx.fillText(scoreText, canvas.width - 45, 33);
+    
+    // Game over screen
+    if (!gameRunning) {
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      
+      ctx.font = 'bold 24px Inter, system-ui';
+      ctx.fillStyle = RED;
+      ctx.fillText('GAME OVER', 80, 180);
+      
+      ctx.font = '14px Inter, system-ui';
+      ctx.fillStyle = GREEN;
+      ctx.fillText('Score: ' + score, 160, 220);
+      
+      ctx.fillStyle = RED;
+      ctx.fillText('SPACE to restart', 120, 260);
+    }
+  }
+  
+  // Keyboard controls
+  document.addEventListener('keydown', (e) => {
+    if (!gameRunning && e.code === 'Space') {
+      // Restart
+      snake = [{x: 10, y: 10}];
+      direction = {x: 0, y: 0};
+      score = 0;
+      randomFood();
+      gameRunning = true;
+      gameLoop();
+      return;
+    }
+    
+    if (!gameRunning) return;
+    
+    switch(e.key) {
+      case 'ArrowUp':
+        if (direction.y === 0) {
+          direction = {x: 0, y: -1};
+        }
+        break;
+      case 'ArrowDown':
+        if (direction.y === 0) {
+          direction = {x: 0, y: 1};
+        }
+        break;
+      case 'ArrowLeft':
+        if (direction.x === 0) {
+          direction = {x: -1, y: 0};
+        }
+        break;
+      case 'ArrowRight':
+        if (direction.x === 0) {
+          direction = {x: 1, y: 0};
+        }
+        break;
+    }
+  });
+  
+  // Start game
+  randomFood();
+  gameLoop();
+})();
+</script>
 </body>
 </html>
