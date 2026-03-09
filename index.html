@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>salaat • map — fixed times & hijri</title>
+    <title>salaat • map — islamic / local times</title>
     <!-- Leaflet (light) -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
@@ -160,59 +160,41 @@
             font-size: 1.1rem;
             letter-spacing: 0.3px;
         }
-        /* combined date block: gregorian + hijri in same style */
-        .date-block {
-            margin-top: 0.8rem;
+        .footnote {
+            margin-top: 1rem;
+            font-size: 0.72rem;
+            color: #5d6b64;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
             border-top: 1px dashed #d3cbbf;
-            padding-top: 0.9rem;
+            padding-top: 1rem;
+            gap: 0.3rem;
+        }
+        .hijri-box {
+            background: #e3e0d6;
+            border-radius: 30px;
+            padding: 0.3rem 1rem;
             font-size: 0.85rem;
-            display: flex;
-            flex-direction: column;
-            gap: 0.2rem;
-            color: #2b444f;
-        }
-        .date-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: baseline;
-            font-family: 'SF Mono', 'JetBrains Mono', monospace;
-        }
-        .date-row .left {
-            font-weight: 370;
-            color: #2f4a55;
-        }
-        .date-row .right {
             font-weight: 400;
-            color: #1f3a45;
-            background: #e7e2d8;
-            padding: 0.1rem 1rem;
-            border-radius: 30px;
-            font-size: 0.8rem;
-        }
-        .hijri-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: baseline;
-            font-family: 'SF Mono', 'JetBrains Mono', monospace;
-            margin-top: 0.1rem;
-        }
-        .hijri-row .left {
-            font-weight: 370;
-            color: #2f4a55;
-        }
-        .hijri-row .right {
-            font-weight: 400;
-            color: #1f3a45;
-            background: #e7e2d8;
-            padding: 0.1rem 1rem;
-            border-radius: 30px;
-            font-size: 0.8rem;
+            color: #2c4452;
+            margin-bottom: 1rem;
+            display: inline-block;
+            width: fit-content;
         }
         .error-note {
             color: #b44e3a;
             font-size: 0.75rem;
             min-height: 1.2rem;
             margin-top: 0.5rem;
+        }
+        .ping {
+            background: #c3d1d6;
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 6px;
         }
         .city-confirm {
             font-size: 0.7rem;
@@ -255,7 +237,9 @@
                 <button id="searchBtn">🔍</button>
             </div>
 
-            <!-- prayer times list -->
+            <!-- current islamic & gregorian -->
+            <div class="hijri-box" id="hijriDisplay">loading Hijri ...</div>
+
             <div class="prayer-list">
                 <div class="prayer-item"><span class="name">Fajr</span><span class="time" id="fajr">--:--</span></div>
                 <div class="prayer-item"><span class="name">Sunrise</span><span class="time" id="sunrise">--:--</span></div>
@@ -265,18 +249,10 @@
                 <div class="prayer-item"><span class="name">Isha</span><span class="time" id="isha">--:--</span></div>
             </div>
 
-            <!-- unified date block: exactly like "Mar 9, 2026   UTC-3 / 22 Ramadan 1447 AH" -->
-            <div class="date-block">
-                <div class="date-row">
-                    <span class="left" id="currentDate">-- --- ----</span>
-                    <span class="right" id="tzOffset">UTC--</span>
-                </div>
-                <div class="hijri-row">
-                    <span class="left" id="hijriDisplay">-- ----- ----</span>
-                    <span class="right">AH</span>
-                </div>
+            <div class="footnote">
+                <span id="currentDate"></span>
+                <span id="tzOffset"></span>
             </div>
-
             <div id="errorMsg" class="error-note"></div>
             <div style="margin-top: 0.8rem; font-size: 0.7rem; color:#8d988b;">click map → city name appears</div>
         </div>
@@ -285,7 +261,7 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
         (function() {
-            // ---------- precise prayer calculation (fixed negative times) ----------
+            // ---------- precise prayer calculation (adhan algorithm) ----------
             const degRad = Math.PI / 180;
 
             function computePrayerTimes(lat, lon, method, date = new Date()) {
@@ -308,10 +284,10 @@
                 const L = (q + 1.915 * Math.sin(g * degRad) + 0.020 * Math.sin(2 * g * degRad)) % 360;
                 const eps = 23.439 - 0.00000036 * daysSinceJ2000;
                 const RA = Math.atan2(Math.cos(eps * degRad) * Math.sin(L * degRad), Math.cos(L * degRad)) / degRad;
-                let decl = Math.asin(Math.sin(eps * degRad) * Math.sin(L * degRad)) / degRad;
+                const decl = Math.asin(Math.sin(eps * degRad) * Math.sin(L * degRad)) / degRad;
 
                 // equation of time (minutes)
-                let eqTime = ((q - 0.0057183 - RA + (q - L < 180 ? 0 : 360)) % 360) * 4;
+                const eqTime = ((q - 0.0057183 - RA + (q - L < 180 ? 0 : 360)) % 360) * 4;
 
                 // solar noon (minutes from midnight UTC)
                 const noon = 720 - 4 * lon - eqTime; 
@@ -333,87 +309,61 @@
                 if (mth === 4 && ishaAngle === '90min') { ishaFixedMin = 90; ishaAngle = null; }
 
                 const latRad = lat * degRad;
-                const declRad = decl * degRad;
-
-                // safe acos helper
-                const acosSafe = (x) => Math.acos(Math.max(-1, Math.min(1, x))) / degRad;
 
                 const computeTime = (angle, isSunrise = false, isAsr = false) => {
                     if (isAsr) {
                         // asr (shafii) shadow = 1
-                        const arg = (Math.sin(Math.atan(1 / (1 + Math.tan(Math.abs(lat - decl) * degRad)))) - Math.sin(declRad) * Math.sin(latRad)) 
-                                    / (Math.cos(declRad) * Math.cos(latRad));
+                        const arg = (Math.sin(Math.atan(1 / (1 + Math.tan(Math.abs(lat - decl) * degRad)))) - Math.sin(decl * degRad) * Math.sin(latRad)) 
+                                    / (Math.cos(decl * degRad) * Math.cos(latRad));
                         const altAsr = Math.asin(Math.max(-1, Math.min(1, arg))) / degRad;
-                        const cosH = (Math.sin(altAsr * degRad) - Math.sin(declRad)*Math.sin(latRad)) 
-                                    / (Math.cos(declRad)*Math.cos(latRad));
-                        const H = acosSafe(cosH);
+                        const cosH = (Math.sin(altAsr * degRad) - Math.sin(decl*degRad)*Math.sin(latRad)) 
+                                    / (Math.cos(decl*degRad)*Math.cos(latRad));
+                        const H = Math.acos(Math.max(-1, Math.min(1, cosH))) / degRad;
                         return noon + (H * 4);
                     }
                     if (isSunrise) {
-                        const cosH = (Math.sin(-0.833 * degRad) - Math.sin(declRad)*Math.sin(latRad)) 
-                                    / (Math.cos(declRad)*Math.cos(latRad));
-                        const H = acosSafe(cosH);
+                        const cosH = (Math.sin(-0.833 * degRad) - Math.sin(decl*degRad)*Math.sin(latRad)) 
+                                    / (Math.cos(decl*degRad)*Math.cos(latRad));
+                        const H = Math.acos(Math.max(-1, Math.min(1, cosH))) / degRad;
                         return noon - (H * 4);
                     }
-                    const cosH = (Math.sin(angle * degRad) - Math.sin(declRad)*Math.sin(latRad)) 
-                                / (Math.cos(declRad)*Math.cos(latRad));
-                    const H = acosSafe(cosH);
-                    return noon - (H * 4);   // fajr / isha (after correction we invert for isha)
+                    const cosH = (Math.sin(angle * degRad) - Math.sin(decl*degRad)*Math.sin(latRad)) 
+                                / (Math.cos(decl*degRad)*Math.cos(latRad));
+                    const H = Math.acos(Math.max(-1, Math.min(1, cosH))) / degRad;
+                    return noon - (H * 4);
                 };
 
                 const fajr = computeTime(fajrAngle, false, false);
                 const sunrise = computeTime(null, true, false);
                 const dhuhr = noon;
                 const asr = computeTime(null, false, true);
-                const maghrib = computeTime(null, true, false); // use same as sunrise but for sunset? we need accurate sunset: use -0.833 same as sunrise, but for maghrib we keep sunset = that value.
-                // In fact sunset is same as sunrise formula but we keep separate variable; but accurate: maghrib = time when sun -0.833°
-                const sunset = computeTime(null, true, false); // yes, same as sunrise angle
-                const maghribExact = sunset; 
+                const maghrib = 2*noon - sunrise;  // sunset
                 let isha;
-                if (ishaFixedMin !== null) isha = maghribExact + ishaFixedMin;
+                if (ishaFixedMin !== null) isha = maghrib + ishaFixedMin;
                 else {
-                    // isha is after sunset; but computeTime gives time before noon for angle? we need to compute isha using angle (evening)
-                    const cosHIsha = (Math.sin(ishaAngle * degRad) - Math.sin(declRad)*Math.sin(latRad)) 
-                                    / (Math.cos(declRad)*Math.cos(latRad));
-                    const HIsha = acosSafe(cosHIsha);
-                    // isha occurs at noon + H*4 (since in evening H is measured from noon)
-                    const ishaEvening = noon + HIsha * 4;
-                    isha = ishaEvening;
+                    const ishaT = computeTime(ishaAngle, false, false);
+                    isha = noon + (noon - ishaT);
                 }
 
-                // assemble times: fajr, sunrise, dhuhr, asr, maghrib, isha
-                let times = [fajr, sunrise, dhuhr, asr, maghribExact, isha];
-                
-                // ---- CRITICAL FIX: ensure all times are within [0,1440) and correctly ordered, no negatives ----
-                // first wrap each to 0-1440
-                times = times.map(t => ((t % 1440) + 1440) % 1440);
-
-                // fix ordering for edge cases (isha may be next day) – but we keep as absolute minutes. 
-                // Additionally ensure fajr < sunrise etc? but we leave as computed.
-                // However original negative numbers came from incorrect isha calculation (should be > maghrib). 
-                // If isha ended up less than maghrib due to angle (high latitude), we adjust by +1440*? but keep simple: add 1440 if isha < maghrib.
-                if (isha < maghribExact) times[5] = isha + 1440; // isha belongs to next day -> show as >24? we will mod again on display.
-                
-                // final wrap for display (formatTime will mod again)
-                times = times.map(t => ((t % 1440) + 1440) % 1440);
-                return times;
+                let times = [fajr, sunrise, dhuhr, asr, maghrib, isha];
+                const utcOffset = -date.getTimezoneOffset(); // minutes
+                return times.map(t => ((t + utcOffset + 1440) % 1440));
             }
 
             const formatTime = (min) => {
                 if (min === null || isNaN(min)) return '--:--';
-                let m = ((min % 1440) + 1440) % 1440; // force positive
-                const h = Math.floor(m / 60) % 24;
-                const minute = Math.floor(m % 60);
-                return `${h.toString().padStart(2,'0')}:${minute.toString().padStart(2,'0')}`;
+                const h = Math.floor(min / 60) % 24;
+                const m = Math.floor(min % 60);
+                return `${h.toString().padStart(2,'0')}:${m.toString().padStart(2,'0')}`;
             };
 
-            // ---------- Hijri (islamic) date approximation (same font, now displayed in date block) ----------
+            // ---------- Hijri (islamic) date approximation ----------
             function getHijriDate(gregDate = new Date()) {
                 // simple fixed math (Kuwaiti algorithm style)
                 const day = gregDate.getDate();
                 const month = gregDate.getMonth() + 1;
                 const year = gregDate.getFullYear();
-                if (year < 1900) return { year: 0, month: 0, day: 0 };
+                if (year < 1900) return 'unknown';
                 
                 let jd = Math.floor((1461 * (year + 4800 + Math.floor((month - 14) / 12))) / 4) +
                           Math.floor((367 * (month - 2 - 12 * (Math.floor((month - 14) / 12)))) / 12) -
@@ -433,10 +383,10 @@
 
             function formatHijri(date) {
                 const h = getHijriDate(date);
-                if (!h || h.year < 0 || h.month < 1) return '-- -----';
+                if (!h || h.year < 0) return '-- Muharram --';
                 const monthNames = ['Muharram', 'Safar', 'Rabiʻ I', 'Rabiʻ II', 'Jumada I', 'Jumada II', 'Rajab', 'Shaʻban', 'Ramadan', 'Shawwal', 'Dhuʻl-Qiʻdah', 'Dhuʻl-Hijjah'];
                 const mName = monthNames[(h.month - 1) % 12] || '';
-                return `${h.day} ${mName} ${h.year}`;
+                return `${h.day} ${mName} ${h.year} AH`;
             }
 
             // ---------- DOM elements ----------
@@ -452,15 +402,15 @@
             const mapLatLngEl = document.getElementById('mapLatLng');
             const dateEl = document.getElementById('currentDate');
             const tzEl = document.getElementById('tzOffset');
-            const hijriDisplay = document.getElementById('hijriDisplay');
             const errorEl = document.getElementById('errorMsg');
+            const hijriDisplay = document.getElementById('hijriDisplay');
 
             // state
             let lat = 21.4225, lng = 39.8262; // default Mecca
             let map, marker;
-            let currentCityName = 'Mecca';
+            let currentCityName = 'Mecca';    // friendly name
 
-            // update times + gregorian + hijri
+            // update times + islamic date + display
             function refreshTimes() {
                 try {
                     const method = methodSelect.value;
@@ -473,14 +423,13 @@
                     maghribEl.textContent = formatTime(times[4]);
                     ishaEl.textContent = formatTime(times[5]);
 
-                    // Gregorian line: Mar 9, 2026
                     const dateStr = now.toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' });
                     dateEl.textContent = dateStr;
                     const tz = now.getTimezoneOffset() / -60;
                     tzEl.textContent = `UTC${tz >=0 ? '+' : ''}${tz}`;
 
-                    // Hijri line: "22 Ramadan 1447" (AH is appended as static)
-                    hijriDisplay.textContent = formatHijri(now);
+                    // Islamic date
+                    hijriDisplay.textContent = `${formatHijri(now)}`;
 
                     errorEl.textContent = '';
                 } catch (e) {
@@ -497,12 +446,13 @@
                 refreshTimes();
             }
 
-            // reverse geocode: get city name
+            // reverse geocode: get city name from lat/lon and fill input
             async function fetchCityName(lat, lon) {
                 try {
                     const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=18&addressdetails=1`);
                     const data = await res.json();
                     if (data && data.display_name) {
+                        // extract short city/town
                         const addr = data.address || {};
                         const city = addr.city || addr.town || addr.village || addr.hamlet || data.display_name.split(',')[0];
                         currentCityName = city || 'unknown';
@@ -515,7 +465,7 @@
                 }
             }
 
-            // forward geocoding
+            // geocoding (forward) with city name update
             async function searchCity(query) {
                 if (!query) return;
                 try {
@@ -539,7 +489,7 @@
                 }
             }
 
-            // initial location via ip
+            // detect user IP location (approx) on start
             async function initUserLocation() {
                 try {
                     const res = await fetch('https://ipapi.co/json/');
@@ -552,18 +502,20 @@
                         map.setView([lat, lng], 6);
                         marker.setLatLng([lat, lng]);
                         updateLatLngDisplay();
-                        fetchCityName(lat, lng);
+                        fetchCityName(lat, lng); // refine name
                     } else {
+                        // fallback to Mecca
                         fetchCityName(lat, lng);
                     }
                 } catch (e) {
+                    // use default mecca & reverse
                     fetchCityName(lat, lng);
                 } finally {
                     refreshTimes();
                 }
             }
 
-            // map init
+            // init map
             function initMap() {
                 map = L.map('map', { zoomControl: false }).setView([lat, lng], 5);
                 L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
@@ -575,7 +527,7 @@
                     const pos = marker.getLatLng();
                     lat = pos.lat;
                     lng = pos.lng;
-                    await fetchCityName(lat, lng);
+                    await fetchCityName(lat, lng);   // get city name on drag
                     updateLatLngDisplay();
                 });
 
@@ -584,22 +536,31 @@
                     lat = pos.lat;
                     lng = pos.lng;
                     marker.setLatLng(pos);
-                    await fetchCityName(lat, lng);
+                    await fetchCityName(lat, lng);   // ← city name appears in input box
                     updateLatLngDisplay();
                 });
 
-                initUserLocation().then(() => refreshTimes());
+                // initial set: try IP location, then update
+                initUserLocation().then(() => {
+                    // extra call to ensure hijri & times
+                    refreshTimes();
+                });
             }
 
+            // search on click / enter
             searchBtn.addEventListener('click', () => searchCity(cityInput.value.trim()));
             cityInput.addEventListener('keypress', (e) => {
                 if (e.key === 'Enter') searchCity(cityInput.value.trim());
             });
             methodSelect.addEventListener('change', refreshTimes);
 
+            // periodic refresh (minute)
             setInterval(refreshTimes, 60000);
 
-            window.addEventListener('load', initMap);
+            // start
+            window.addEventListener('load', () => {
+                initMap();
+            });
         })();
     </script>
 </body>
