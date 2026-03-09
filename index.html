@@ -3,645 +3,462 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>minimal · prayer times · map</title>
+    <title>salaat • map</title>
+    <!-- Leaflet (light) -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
-
         body {
-            background: #f5f3ef;
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            color: #1e2b2f;
-            line-height: 1.4;
-            min-height: 100vh;
+            background: #f3f1ec;
+            font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+            height: 100vh;
             display: flex;
             flex-direction: column;
+            color: #1c2b33;
         }
-
-        .container {
-            max-width: 1000px;
-            margin: 0 auto;
-            padding: 2rem 1.5rem;
-            flex: 1;
-        }
-
-        /* header */
-        .header {
-            margin-bottom: 2rem;
+        /* header — just a line */
+        .top {
             display: flex;
-            align-items: baseline;
             justify-content: space-between;
-            flex-wrap: wrap;
-            gap: 0.75rem 1rem;
-            border-bottom: 1px solid #d6cfc4;
-            padding-bottom: 0.75rem;
-        }
-
-        .header h1 {
-            font-weight: 400;
-            font-size: 1.6rem;
-            letter-spacing: -0.02em;
-            color: #3f4b4f;
-        }
-
-        .header h1 span {
+            align-items: center;
+            padding: 0.75rem 1.5rem;
+            background: #ffffffba;
+            backdrop-filter: blur(4px);
+            border-bottom: 1px solid #d4cdc0;
             font-weight: 350;
-            color: #7f8a8e;
+            letter-spacing: 0.2px;
         }
-
-        .method-badge {
-            background: transparent;
-            border: 1px solid #b8b0a4;
+        .top h2 {
+            font-weight: 350;
+            font-size: 1.3rem;
+            color: #3f4e56;
+        }
+        .top h2 span {
+            color: #8e9ca3;
+            margin-right: 0.3rem;
+        }
+        .method-wrap {
+            background: #e3ddd2;
             border-radius: 40px;
-            padding: 0.3rem 1rem;
-            font-size: 0.9rem;
-            display: inline-flex;
+            padding: 0.25rem 0.8rem;
+            font-size: 0.8rem;
+            display: flex;
             align-items: center;
             gap: 6px;
-            color: #2f3b40;
         }
-
-        .method-badge select {
+        .method-wrap select {
             background: transparent;
             border: none;
-            font-family: inherit;
-            font-size: 0.9rem;
-            font-weight: 450;
-            color: #1e2b2f;
-            outline: none;
-            cursor: pointer;
-        }
-
-        /* main two column */
-        .prayer-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 1.8rem;
-            margin: 1.5rem 0 1.2rem;
-        }
-
-        @media (max-width: 660px) {
-            .prayer-grid {
-                grid-template-columns: 1fr;
-                gap: 2rem;
-            }
-        }
-
-        /* left column : location & times */
-        .location-panel {
-            background: #ffffffd6;
-            backdrop-filter: blur(2px);
-            border: 1px solid #e2d9cf;
-            border-radius: 18px;
-            padding: 1.5rem 1.2rem;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.02);
-        }
-
-        .input-group {
-            display: flex;
-            flex-direction: column;
-            gap: 0.4rem;
-            margin-bottom: 1.5rem;
-        }
-
-        .input-row {
-            display: flex;
-            align-items: center;
-            background: #ffffff;
-            border: 1px solid #d9d0c5;
-            border-radius: 60px;
-            padding: 0.1rem 0.1rem 0.1rem 1.2rem;
-        }
-
-        .input-row input {
-            flex: 1;
-            border: none;
-            padding: 0.75rem 0.5rem;
-            font-size: 1rem;
-            background: transparent;
-            outline: none;
-            font-weight: 350;
-            color: #1e2b2f;
-            min-width: 0;
-        }
-
-        .input-row button {
-            background: #eae4db;
-            border: 1px solid #cdc3b7;
-            border-radius: 60px;
-            padding: 0.6rem 1.4rem;
-            font-size: 0.9rem;
-            font-weight: 450;
-            color: #2f3b40;
-            cursor: pointer;
-            transition: 0.15s;
-            white-space: nowrap;
-        }
-
-        .input-row button:hover {
-            background: #dfd7cd;
-        }
-
-        .small-note {
-            font-size: 0.75rem;
-            color: #8b8f85;
-            padding-left: 1rem;
-        }
-
-        .coords-manual {
-            display: flex;
-            gap: 0.5rem;
-            margin-bottom: 1rem;
-            font-size: 0.85rem;
-            color: #566267;
-            align-items: center;
-            flex-wrap: wrap;
-        }
-
-        .coords-manual span {
-            background: #ebe6df;
-            padding: 0.2rem 0.8rem;
-            border-radius: 20px;
-        }
-
-        /* prayer table */
-        .prayer-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin: 1.4rem 0 0.4rem;
-        }
-
-        .prayer-table tr {
-            border-bottom: 1px solid #e5ddd2;
-        }
-
-        .prayer-table tr:last-child {
-            border-bottom: none;
-        }
-
-        .prayer-table td {
-            padding: 0.65rem 0.2rem;
-            font-size: 1.2rem;
-            font-weight: 340;
-        }
-
-        .prayer-table td:first-child {
-            font-weight: 400;
-            color: #40535c;
-            width: 40%;
-        }
-
-        .prayer-table td:last-child {
-            font-family: 'SF Mono', 'JetBrains Mono', monospace;
-            letter-spacing: 0.5px;
-            text-align: right;
-        }
-
-        .date-location {
             font-size: 0.8rem;
-            color: #7f7e76;
-            display: flex;
-            justify-content: space-between;
-            margin-top: 1rem;
-            border-top: 1px dashed #d6cfc4;
-            padding-top: 0.7rem;
+            font-weight: 450;
+            padding: 0.3rem 0;
+            outline: none;
+            color: #1f2e36;
         }
-
-        /* right column : map */
-        .map-panel {
-            background: #e7e1d8;
-            border: 1px solid #d3cabc;
-            border-radius: 18px;
+        /* main grid: map (70%) + times (30%) */
+        .main {
+            display: flex;
+            flex: 1;
             overflow: hidden;
-            display: flex;
-            flex-direction: column;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.02);
-            min-height: 380px;
         }
-
-        .map-container {
-            width: 100%;
-            height: 300px;
-            background: #cfd9db;
+        .map-panel {
+            flex: 3;  /* 70% roughly */
             position: relative;
-            cursor: crosshair;
+            background: #dbd5ca;
+            border-right: 1px solid #c2b9ab;
         }
-
         #map {
             width: 100%;
             height: 100%;
-            background: #e5e0d8;
+            background: #d6d2c9;
         }
-
-        .map-controls {
-            background: #ece7e0;
-            padding: 0.7rem 1rem;
+        .map-overlay {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            background: #ffffffdd;
+            backdrop-filter: blur(8px);
+            padding: 0.4rem 1rem;
+            border-radius: 60px;
+            font-size: 0.9rem;
+            border: 1px solid #b7ad9e;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.02);
+            color: #1f353f;
             display: flex;
-            flex-wrap: wrap;
-            gap: 0.5rem;
-            align-items: center;
-            justify-content: space-between;
-            border-top: 1px solid #cfc5b8;
-            font-size: 0.85rem;
+            gap: 10px;
+            pointer-events: none;
         }
-
-        .map-controls button {
-            background: #ffffffb3;
-            border: 1px solid #b9afa2;
-            border-radius: 30px;
-            padding: 0.35rem 1rem;
+        .map-overlay span {
+            font-family: 'SF Mono', 'Fira Code', monospace;
+            font-weight: 450;
+        }
+        .times-panel {
+            flex: 1.2;  /* ~30% */
+            background: #faf8f4;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+            padding: 1.5rem 1.2rem;
+            border-left: 1px solid #ddd2c4;
+            min-width: 240px;
+        }
+        .place-row {
+            display: flex;
+            gap: 6px;
+            margin-bottom: 2rem;
+            background: #ede8e0;
+            padding: 0.2rem 0.2rem 0.2rem 1.2rem;
+            border-radius: 60px;
+            border: 1px solid #cdc2b4;
+        }
+        .place-row input {
+            flex: 1;
+            border: none;
+            background: none;
+            font-size: 0.9rem;
+            padding: 0.5rem 0;
+            outline: none;
+            color: #1e2f38;
+        }
+        .place-row button {
+            background: #d9d0c2;
+            border: none;
+            border-radius: 60px;
+            padding: 0.5rem 1.4rem;
             font-size: 0.8rem;
+            font-weight: 500;
+            color: #2b3c45;
             cursor: pointer;
             transition: 0.1s;
-            color: #2b393f;
+            white-space: nowrap;
         }
-
-        .map-controls button:hover {
-            background: #ffffff;
+        .place-row button:hover {
+            background: #cdc1b1;
         }
-
-        .method-selector-mini {
+        .prayer-list {
+            margin-top: 0.2rem;
+            border-top: 1px solid #dad1c3;
+            padding-top: 0.6rem;
+        }
+        .prayer-item {
             display: flex;
+            justify-content: space-between;
             align-items: center;
-            gap: 0.3rem;
-            background: #dbd2c7;
-            padding: 0.2rem 0.6rem;
-            border-radius: 30px;
+            padding: 0.6rem 0.2rem;
+            border-bottom: 1px solid #e7dfd3;
+            font-size: 1.2rem;
+            font-weight: 340;
         }
-
-        .footer-note {
-            text-align: center;
-            margin-top: 2.5rem;
-            font-size: 0.7rem;
-            color: #928b80;
-            border-top: 1px solid #dad2c7;
-            padding-top: 1.2rem;
+        .prayer-item .name {
+            font-weight: 400;
+            color: #3e535d;
         }
-
-        .error-message {
-            color: #a64b3c;
-            font-size: 0.8rem;
-            margin: 0.5rem 0 0;
+        .prayer-item .time {
+            font-family: 'SF Mono', 'JetBrains Mono', monospace;
+            font-size: 1.1rem;
+            letter-spacing: 0.3px;
         }
-
-        .map-attribution {
-            font-size: 0.6rem;
-            text-align: right;
-            padding: 0.2rem 0.5rem;
-            background: #f0e9e0;
-            color: #6f6b63;
+        .footnote {
+            margin-top: auto;
+            font-size: 0.65rem;
+            color: #948e82;
+            display: flex;
+            justify-content: space-between;
+            border-top: 1px dashed #d3cbbf;
+            padding-top: 1rem;
+        }
+        .error-note {
+            color: #b44e3a;
+            font-size: 0.75rem;
+            min-height: 1.2rem;
+            margin-top: 0.5rem;
+        }
+        /* tiny */
+        .ping {
+            background: #c3d1d6;
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 6px;
         }
     </style>
-    <!-- Leaflet CSS & JS for interactive map -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 </head>
 <body>
-<div class="container">
-    <div class="header">
-        <h1>𓃥 prayer / <span>map</span></h1>
-        <div class="method-badge">
-            🌙 method
-            <select id="methodSelect" aria-label="Calculation method">
-                <option value="3" selected>Muslim World League (MWL)</option>
-                <option value="0">Shia Ithna Ashari (Jafari)</option>
-                <option value="1">University of Islamic Sciences, Karachi</option>
-                <option value="2">Islamic Society of North America (ISNA)</option>
-                <option value="4">Umm Al-Qura, Makkah</option>
-                <option value="5">Egyptian General Authority of Survey</option>
-                <option value="7">Institute of Geophysics, Tehran</option>
+    <div class="top">
+        <h2><span>🕌</span> prayer · map</h2>
+        <div class="method-wrap">
+            <span>method</span>
+            <select id="methodSelect">
+                <option value="3" selected>MWL</option>
+                <option value="0">Jafari</option>
+                <option value="1">Karachi</option>
+                <option value="2">ISNA</option>
+                <option value="4">Makkah</option>
+                <option value="5">Egypt</option>
+                <option value="7">Tehran</option>
             </select>
         </div>
     </div>
 
-    <div class="prayer-grid">
-        <!-- left column -->
-        <div class="location-panel">
-            <div class="input-group">
-                <div class="input-row">
-                    <input type="text" id="cityInput" placeholder="city name (e.g. Mecca)" value="Mecca">
-                    <button id="searchCityBtn">search</button>
-                </div>
-                <div class="coords-manual">
-                    <span id="displayLat">lat 21.4225</span>
-                    <span id="displayLon">lon 39.8262</span>
-                    <span style="font-size:0.75rem;"> ↷ click map updates</span>
-                </div>
-            </div>
-
-            <table class="prayer-table" id="prayerTimesTable">
-                <tr><td>Fajr</td><td id="fajr">--:--</td></tr>
-                <tr><td>Sunrise</td><td id="sunrise">--:--</td></tr>
-                <tr><td>Dhuhr</td><td id="dhuhr">--:--</td></tr>
-                <tr><td>Asr</td><td id="asr">--:--</td></tr>
-                <tr><td>Maghrib</td><td id="maghrib">--:--</td></tr>
-                <tr><td>Isha</td><td id="isha">--:--</td></tr>
-            </table>
-
-            <div class="date-location">
-                <span id="currentDate"></span>
-                <span id="timezoneOffset"></span>
-            </div>
-            <div id="errorMessage" class="error-message"></div>
-        </div>
-
-        <!-- right column : interactive map -->
+    <div class="main">
+        <!-- map column -->
         <div class="map-panel">
-            <div class="map-container" id="mapContainer"></div>
-            <div class="map-controls">
-                <button id="useMapLocation">use current map center</button>
-                <div class="method-selector-mini">
-                    <span>📍</span>
-                    <span id="mapCoords">21.42, 39.83</span>
-                </div>
+            <div id="map"></div>
+            <div class="map-overlay">
+                <span>📍</span>
+                <span id="mapLatLng">21.42°N 39.83°E</span>
             </div>
-            <div class="map-attribution">click on map to set location</div>
+        </div>
+
+        <!-- times column (clean) -->
+        <div class="times-panel">
+            <div class="place-row">
+                <input type="text" id="cityInput" placeholder="city, place" value="Mecca">
+                <button id="searchBtn">🔍</button>
+            </div>
+
+            <div class="prayer-list">
+                <div class="prayer-item"><span class="name">Fajr</span><span class="time" id="fajr">--:--</span></div>
+                <div class="prayer-item"><span class="name">Sunrise</span><span class="time" id="sunrise">--:--</span></div>
+                <div class="prayer-item"><span class="name">Dhuhr</span><span class="time" id="dhuhr">--:--</span></div>
+                <div class="prayer-item"><span class="name">Asr</span><span class="time" id="asr">--:--</span></div>
+                <div class="prayer-item"><span class="name">Maghrib</span><span class="time" id="maghrib">--:--</span></div>
+                <div class="prayer-item"><span class="name">Isha</span><span class="time" id="isha">--:--</span></div>
+            </div>
+
+            <div class="footnote">
+                <span id="currentDate"></span>
+                <span id="tzOffset"></span>
+            </div>
+            <div id="errorMsg" class="error-note"></div>
+            <div style="margin-top: 0.8rem; font-size: 0.7rem; color:#8d988b;">click map → update times</div>
         </div>
     </div>
 
-    <div class="footer-note">
-        minimal prayer · accurate times · all methods · alhamdulillah
-    </div>
-</div>
+    <!-- leaflet js -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        (function() {
+            // ----------------------------------------------------
+            // precise prayer calculation (adhan algorithm)
+            // ----------------------------------------------------
+            const degRad = Math.PI / 180;
 
-<script>
-    (function() {
-        // ---------- CONSTANTS / HELPERS ----------
-        const methods = {
-            0: 'Jafari',          // Shia Ithna Ashari
-            1: 'Karachi',
-            2: 'ISNA',
-            3: 'MWL',
-            4: 'Makkah',
-            5: 'Egypt',
-            7: 'Tehran'
-        };
+            function computePrayerTimes(lat, lon, method, date = new Date()) {
+                const y = date.getFullYear();
+                const m = date.getMonth() + 1;
+                const d = date.getDate();
 
-        // prayer times calculation lib (accurate adhan algorithm)
-        function computePrayerTimes(lat, lon, method, date = new Date()) {
-            const day = date.getDate();
-            const month = date.getMonth() + 1;
-            const year = date.getFullYear();
+                // julian day helper
+                const jd = (() => {
+                    let year = y, month = m, day = d;
+                    if (month <= 2) { year -= 1; month += 12; }
+                    const A = Math.floor(year / 100);
+                    const B = 2 - A + Math.floor(A / 4);
+                    return Math.floor(365.25 * (year + 4716)) + Math.floor(30.6001 * (month + 1)) + day + B - 1524.5;
+                })();
 
-            // calculate julian day
-            const calcJD = (y, m, d) => {
-                if (m <= 2) { y -= 1; m += 12; }
-                const A = Math.floor(y/100);
-                const B = 2 - A + Math.floor(A/4);
-                return Math.floor(365.25*(y+4716)) + Math.floor(30.6001*(m+1)) + d + B - 1524.5;
-            };
-            let jd = calcJD(year, month, day);
-            const d = jd - 2451545.0;  // days since J2000
+                const daysSinceJ2000 = jd - 2451545.0;
+                const g = (357.529 + 0.98560028 * daysSinceJ2000) % 360;
+                const q = (280.459 + 0.98564736 * daysSinceJ2000) % 360;
+                const L = (q + 1.915 * Math.sin(g * degRad) + 0.020 * Math.sin(2 * g * degRad)) % 360;
+                const eps = 23.439 - 0.00000036 * daysSinceJ2000;
+                const RA = Math.atan2(Math.cos(eps * degRad) * Math.sin(L * degRad), Math.cos(L * degRad)) / degRad;
+                const decl = Math.asin(Math.sin(eps * degRad) * Math.sin(L * degRad)) / degRad;
 
-            // solar mean longitude & anomaly
-            const g = (357.529 + 0.98560028 * d) % 360;
-            const q = (280.459 + 0.98564736 * d) % 360;
-            const L = (q + 1.915 * Math.sin(g * degRad) + 0.020 * Math.sin(2*g * degRad)) % 360;
+                // equation of time (minutes)
+                const eqTime = ((q - 0.0057183 - RA + (q - L < 180 ? 0 : 360)) % 360) * 4;
 
-            // obliquity of ecliptic
-            const eps = 23.439 - 0.00000036 * d;
-            const RA = Math.atan2(Math.cos(eps*degRad)*Math.sin(L*degRad), Math.cos(L*degRad)) / degRad;
-            // declination
-            const decl = Math.asin(Math.sin(eps*degRad)*Math.sin(L*degRad)) / degRad;
+                // solar noon (minutes from midnight UTC)
+                const noon = 720 - 4 * lon - eqTime; 
 
-            // equation of time (minutes)
-            const E = (q - 0.0057183 - RA + (q - L < 180 ? 0 : 360)) % 360;
-            const eqTime = E * 4; // minutes
+                // method angles
+                const angles = {
+                    0: { fajr: 16, isha: 14 },       // Jafari
+                    1: { fajr: 18, isha: 18 },        // Karachi
+                    2: { fajr: 15, isha: 15 },         // ISNA
+                    3: { fajr: 18, isha: 17 },         // MWL
+                    4: { fajr: 18.5, isha: '90min' },  // Makkah
+                    5: { fajr: 19.5, isha: 17.5 },     // Egypt
+                    7: { fajr: 17.7, isha: 14 }        // Tehran
+                };
+                const mth = parseInt(method, 10);
+                const fajrAngle = angles[mth]?.fajr ?? 18;
+                let ishaAngle = angles[mth]?.isha ?? 17;
+                let ishaFixedMin = null;
+                if (mth === 4 && ishaAngle === '90min') { ishaFixedMin = 90; ishaAngle = null; }
 
-            // solar noon (minutes relative to midnight UTC)
-            const noon = 720 - 4*lon - eqTime; // in minutes from midnight
+                const latRad = lat * degRad;
 
-            // prayer angles based on method
-            const angles = {
-                0: { fajr: 16, isha: 14 },     // Jafari
-                1: { fajr: 18, isha: 18 },      // Karachi
-                2: { fajr: 15, isha: 15 },       // ISNA
-                3: { fajr: 18, isha: 17 },       // MWL
-                4: { fajr: 18.5, isha: '90min' },// Makkah
-                5: { fajr: 19.5, isha: 17.5 },   // Egypt
-                7: { fajr: 17.7, isha: 14 }      // Tehran
-            };
-            const m = parseInt(method, 10);
-            const fajrAngle = angles[m]?.fajr ?? 18;
-            let ishaAngle = angles[m]?.isha ?? 17;
-            let ishaFixedMin = null;
-            if (m === 4 && ishaAngle === '90min') { ishaFixedMin = 90; ishaAngle = null; }
-
-            const dtr = degRad;
-            const latRad = lat * dtr;
-
-            const computeTime = (angle, isSunriseSet = false, isAsr = false) => {
-                if (isAsr) {
-                    // Standard asr (Shafii) - shadow length 1
-                    const arg = (Math.sin(Math.atan(1/(1 + Math.tan(Math.abs(lat - decl) * dtr)))) - Math.sin(decl * dtr) * Math.sin(latRad)) / (Math.cos(decl * dtr) * Math.cos(latRad));
-                    const altAsr = Math.asin(Math.max(-1, Math.min(1, arg))) / dtr;
-                    const cosH = (Math.sin(altAsr * dtr) - Math.sin(decl*dtr)*Math.sin(latRad)) / (Math.cos(decl*dtr)*Math.cos(latRad));
-                    const H = Math.acos(Math.max(-1, Math.min(1, cosH))) / dtr;
-                    return noon + (H * 4);
-                }
-                else if (isSunriseSet) {
-                    const cosH = (Math.sin(-0.833 * dtr) - Math.sin(decl*dtr)*Math.sin(latRad)) / (Math.cos(decl*dtr)*Math.cos(latRad));
-                    const H = Math.acos(Math.max(-1, Math.min(1, cosH))) / dtr;
+                const computeTime = (angle, isSunrise = false, isAsr = false) => {
+                    if (isAsr) {
+                        // asr (shafii) shadow = 1
+                        const arg = (Math.sin(Math.atan(1 / (1 + Math.tan(Math.abs(lat - decl) * degRad)))) - Math.sin(decl * degRad) * Math.sin(latRad)) 
+                                    / (Math.cos(decl * degRad) * Math.cos(latRad));
+                        const altAsr = Math.asin(Math.max(-1, Math.min(1, arg))) / degRad;
+                        const cosH = (Math.sin(altAsr * degRad) - Math.sin(decl*degRad)*Math.sin(latRad)) 
+                                    / (Math.cos(decl*degRad)*Math.cos(latRad));
+                        const H = Math.acos(Math.max(-1, Math.min(1, cosH))) / degRad;
+                        return noon + (H * 4);
+                    }
+                    if (isSunrise) {
+                        const cosH = (Math.sin(-0.833 * degRad) - Math.sin(decl*degRad)*Math.sin(latRad)) 
+                                    / (Math.cos(decl*degRad)*Math.cos(latRad));
+                        const H = Math.acos(Math.max(-1, Math.min(1, cosH))) / degRad;
+                        return noon - (H * 4);
+                    }
+                    const cosH = (Math.sin(angle * degRad) - Math.sin(decl*degRad)*Math.sin(latRad)) 
+                                / (Math.cos(decl*degRad)*Math.cos(latRad));
+                    const H = Math.acos(Math.max(-1, Math.min(1, cosH))) / degRad;
                     return noon - (H * 4);
-                } else {
-                    const cosH = (Math.sin(angle * dtr) - Math.sin(decl*dtr)*Math.sin(latRad)) / (Math.cos(decl*dtr)*Math.cos(latRad));
-                    const H = Math.acos(Math.max(-1, Math.min(1, cosH))) / dtr;
-                    return noon - (H * 4);
+                };
+
+                const fajr = computeTime(fajrAngle, false, false);
+                const sunrise = computeTime(null, true, false);
+                const dhuhr = noon;
+                const asr = computeTime(null, false, true);
+                const maghrib = 2*noon - sunrise;  // sunset
+                let isha;
+                if (ishaFixedMin !== null) isha = maghrib + ishaFixedMin;
+                else {
+                    const ishaT = computeTime(ishaAngle, false, false);
+                    isha = noon + (noon - ishaT);
                 }
+
+                let times = [fajr, sunrise, dhuhr, asr, maghrib, isha];
+                const utcOffset = -date.getTimezoneOffset(); // minutes
+                return times.map(t => ((t + utcOffset + 1440) % 1440));
+            }
+
+            const formatTime = (min) => {
+                if (min === null || isNaN(min)) return '--:--';
+                const h = Math.floor(min / 60) % 24;
+                const m = Math.floor(min % 60);
+                return `${h.toString().padStart(2,'0')}:${m.toString().padStart(2,'0')}`;
             };
 
-            // compute prayer times
-            const fajrTime = computeTime(fajrAngle, false, false);
-            const sunriseTime = computeTime(null, true, false);
-            const sunsetTime = 2*noon - sunriseTime;
-            const dhuhrTime = noon;
-            const asrTime = computeTime(null, false, true);
-            const maghribTime = sunsetTime;
-            let ishaTime;
-            if (ishaFixedMin !== null) {
-                ishaTime = maghribTime + ishaFixedMin;
-            } else {
-                const ishaT = computeTime(ishaAngle, false, false);
-                ishaTime = noon + (noon - ishaT);
-            }
+            // DOM
+            const cityInput = document.getElementById('cityInput');
+            const searchBtn = document.getElementById('searchBtn');
+            const methodSelect = document.getElementById('methodSelect');
+            const fajrEl = document.getElementById('fajr');
+            const sunriseEl = document.getElementById('sunrise');
+            const dhuhrEl = document.getElementById('dhuhr');
+            const asrEl = document.getElementById('asr');
+            const maghribEl = document.getElementById('maghrib');
+            const ishaEl = document.getElementById('isha');
+            const mapLatLngEl = document.getElementById('mapLatLng');
+            const dateEl = document.getElementById('currentDate');
+            const tzEl = document.getElementById('tzOffset');
+            const errorEl = document.getElementById('errorMsg');
 
-            const times = [fajrTime, sunriseTime, dhuhrTime, asrTime, maghribTime, ishaTime];
+            // state
+            let lat = 21.4225, lng = 39.8262;
+            let map, marker;
 
-            // adjust for local timezone
-            const localOffset = date.getTimezoneOffset();
-            const utcOffset = -localOffset;
+            // update times + display
+            function refreshTimes() {
+                try {
+                    const method = methodSelect.value;
+                    const now = new Date();
+                    const times = computePrayerTimes(lat, lng, method, now);
+                    fajrEl.textContent = formatTime(times[0]);
+                    sunriseEl.textContent = formatTime(times[1]);
+                    dhuhrEl.textContent = formatTime(times[2]);
+                    asrEl.textContent = formatTime(times[3]);
+                    maghribEl.textContent = formatTime(times[4]);
+                    ishaEl.textContent = formatTime(times[5]);
 
-            const localMinutes = times.map(t => {
-                if (!t && t !== 0) return null;
-                let localT = (t + utcOffset + 1440) % 1440;
-                return localT;
-            });
-
-            return localMinutes;
-        }
-
-        const degRad = Math.PI / 180;
-
-        function minutesToTime(min) {
-            if (min === null || isNaN(min)) return '--:--';
-            const h = Math.floor(min / 60) % 24;
-            const m = Math.floor(min % 60);
-            return `${h.toString().padStart(2,'0')}:${m.toString().padStart(2,'0')}`;
-        }
-
-        // DOM elements
-        const cityInput = document.getElementById('cityInput');
-        const searchBtn = document.getElementById('searchCityBtn');
-        const methodSelect = document.getElementById('methodSelect');
-        const fajrEl = document.getElementById('fajr');
-        const sunriseEl = document.getElementById('sunrise');
-        const dhuhrEl = document.getElementById('dhuhr');
-        const asrEl = document.getElementById('asr');
-        const maghribEl = document.getElementById('maghrib');
-        const ishaEl = document.getElementById('isha');
-        const displayLat = document.getElementById('displayLat');
-        const displayLon = document.getElementById('displayLon');
-        const mapCoords = document.getElementById('mapCoords');
-        const errorMsg = document.getElementById('errorMessage');
-        const dateEl = document.getElementById('currentDate');
-        const tzEl = document.getElementById('timezoneOffset');
-        const useMapLocationBtn = document.getElementById('useMapLocation');
-
-        // state
-        let currentLat = 21.4225;
-        let currentLon = 39.8262;
-        let currentLocName = 'Mecca';
-        let map, marker;
-
-        // Initialize map
-        function initMap() {
-            map = L.map('mapContainer').setView([currentLat, currentLon], 4);
-            
-            L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-            }).addTo(map);
-
-            marker = L.marker([currentLat, currentLon], {
-                draggable: true
-            }).addTo(map);
-
-            // Update on marker drag
-            marker.on('dragend', function(e) {
-                const pos = marker.getLatLng();
-                currentLat = pos.lat;
-                currentLon = pos.lng;
-                updateLocationAndTimes();
-            });
-
-            // Update on map click
-            map.on('click', function(e) {
-                const pos = e.latlng;
-                currentLat = pos.lat;
-                currentLon = pos.lng;
-                marker.setLatLng(pos);
-                updateLocationAndTimes();
-            });
-
-            // Initial update
-            updateLocationAndTimes();
-        }
-
-        function updateLocationAndTimes() {
-            // Round to 4 decimals for display
-            currentLat = Math.round(currentLat * 10000) / 10000;
-            currentLon = Math.round(currentLon * 10000) / 10000;
-            
-            displayLat.textContent = `lat ${currentLat.toFixed(4)}`;
-            displayLon.textContent = `lon ${currentLon.toFixed(4)}`;
-            mapCoords.textContent = `${currentLat.toFixed(2)}, ${currentLon.toFixed(2)}`;
-            
-            refreshTimes();
-        }
-
-        function refreshTimes() {
-            try {
-                const method = parseInt(methodSelect.value, 10);
-                const now = new Date();
-                const times = computePrayerTimes(currentLat, currentLon, method, now);
-
-                fajrEl.textContent = minutesToTime(times[0]);
-                sunriseEl.textContent = minutesToTime(times[1]);
-                dhuhrEl.textContent = minutesToTime(times[2]);
-                asrEl.textContent = minutesToTime(times[3]);
-                maghribEl.textContent = minutesToTime(times[4]);
-                ishaEl.textContent = minutesToTime(times[5]);
-
-                const dateStr = now.toLocaleDateString('en-US', { year:'numeric', month:'short', day:'numeric' });
-                dateEl.textContent = dateStr;
-                tzEl.textContent = `UTC${now.getTimezoneOffset()/-60 >0 ? '+' : ''}${now.getTimezoneOffset()/-60}`;
-
-                errorMsg.textContent = '';
-            } catch (e) {
-                errorMsg.textContent = 'calculation error';
-                console.warn(e);
-            }
-        }
-
-        // Geocoding function
-        async function searchCity(city) {
-            if (!city) return;
-            try {
-                const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(city)}&limit=1`);
-                const data = await res.json();
-                if (data && data.length > 0) {
-                    const { lat, lon, display_name } = data[0];
-                    currentLat = parseFloat(lat);
-                    currentLon = parseFloat(lon);
-                    currentLocName = display_name.split(',')[0];
-                    cityInput.value = currentLocName;
-                    
-                    // Update map view and marker
-                    map.setView([currentLat, currentLon], 8);
-                    marker.setLatLng([currentLat, currentLon]);
-                    
-                    updateLocationAndTimes();
-                } else {
-                    errorMsg.textContent = 'city not found';
+                    const dateStr = now.toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' });
+                    dateEl.textContent = dateStr;
+                    const tz = now.getTimezoneOffset() / -60;
+                    tzEl.textContent = `UTC${tz >=0 ? '+' : ''}${tz}`;
+                    errorEl.textContent = '';
+                } catch (e) {
+                    errorEl.textContent = 'error';
                 }
-            } catch (err) {
-                errorMsg.textContent = 'geocoding error';
-                console.error(err);
             }
-        }
 
-        // Event listeners
-        searchBtn.addEventListener('click', () => {
-            searchCity(cityInput.value.trim());
-        });
+            function updateLatLngDisplay() {
+                const latStr = lat.toFixed(4);
+                const lngStr = lng.toFixed(4);
+                const latDir = lat >= 0 ? 'N' : 'S';
+                const lngDir = lng >= 0 ? 'E' : 'W';
+                mapLatLngEl.textContent = `${Math.abs(lat).toFixed(2)}°${latDir} ${Math.abs(lng).toFixed(2)}°${lngDir}`;
+                refreshTimes();
+            }
 
-        cityInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') searchCity(cityInput.value.trim());
-        });
+            // geocoding (simple)
+            async function searchCity(query) {
+                if (!query) return;
+                try {
+                    const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1`);
+                    const data = await res.json();
+                    if (data && data[0]) {
+                        const { lat: newLat, lon: newLon, display_name } = data[0];
+                        lat = parseFloat(newLat);
+                        lng = parseFloat(newLon);
+                        cityInput.value = display_name.split(',')[0];
+                        map.setView([lat, lng], 8);
+                        marker.setLatLng([lat, lng]);
+                        updateLatLngDisplay();
+                    } else {
+                        errorEl.textContent = 'not found';
+                    }
+                } catch {
+                    errorEl.textContent = 'geocoding fail';
+                }
+            }
 
-        methodSelect.addEventListener('change', refreshTimes);
+            // init map
+            function initMap() {
+                map = L.map('map', { zoomControl: false }).setView([lat, lng], 4);
+                L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+                    attribution: '© OpenStreetMap'
+                }).addTo(map);
+                marker = L.marker([lat, lng], { draggable: true }).addTo(map);
 
-        useMapLocationBtn.addEventListener('click', () => {
-            // Use current map center
-            const center = map.getCenter();
-            currentLat = center.lat;
-            currentLon = center.lng;
-            marker.setLatLng([currentLat, currentLon]);
-            updateLocationAndTimes();
-        });
+                marker.on('dragend', (e) => {
+                    const pos = marker.getLatLng();
+                    lat = pos.lat;
+                    lng = pos.lng;
+                    updateLatLngDisplay();
+                });
 
-        // Initialize map when DOM is ready
-        window.addEventListener('load', () => {
-            initMap();
-            // Initial geocode for Mecca to get proper name
-            searchCity('Mecca');
-        });
+                map.on('click', (e) => {
+                    const pos = e.latlng;
+                    lat = pos.lat;
+                    lng = pos.lng;
+                    marker.setLatLng(pos);
+                    updateLatLngDisplay();
+                });
 
-        // Update times every minute
-        setInterval(refreshTimes, 60000);
-    })();
-</script>
+                // initial set
+                updateLatLngDisplay();
+            }
+
+            // search on click
+            searchBtn.addEventListener('click', () => searchCity(cityInput.value.trim()));
+            cityInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') searchCity(cityInput.value.trim());
+            });
+            methodSelect.addEventListener('change', refreshTimes);
+
+            // periodic update every minute (clock change)
+            setInterval(refreshTimes, 60000);
+
+            // start
+            window.addEventListener('load', () => {
+                initMap();
+                // fetch mecca formal name
+                setTimeout(() => searchCity('Mecca'), 100);
+            });
+        })();
+    </script>
 </body>
 </html>
