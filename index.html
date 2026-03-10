@@ -134,51 +134,58 @@
             letter-spacing: 0.3px;
         }
 
-        /* Footnote area — two rows, identical font/color/size */
+        /* Footnote area — improved font sizes and styling */
         .footnote {
             margin-top: 1rem;
-            font-size: 0.72rem;
-            color: #5d6b64;
             display: flex;
             flex-direction: column;
-            gap: 0.15rem;
+            gap: 0.4rem;
             border-top: 1px dashed #d3cbbf;
             padding-top: 1rem;
         }
-        /* Hijri row — same font-family (monospace), same color/size as gregorian */
+        
+        /* Hijri row - larger, clearer font */
         .hijri-row {
             display: flex;
             justify-content: space-between;
-            gap: 0.3rem;
+            align-items: baseline;
+            font-size: 0.9rem;
         }
         #hijriDate {
-            font-family: 'SF Mono', 'JetBrains Mono', monospace;
-            font-size: 0.72rem;
-            color: #5d6b64;
-            font-weight: 450;
+            font-family: 'SF Mono', 'JetBrains Mono', 'Menlo', 'Consolas', monospace;
+            font-size: 0.9rem;
+            color: #2d424b;
+            font-weight: 500;
+            letter-spacing: 0.2px;
         }
         #hijriLabel {
-            font-family: 'SF Mono', 'JetBrains Mono', monospace;
-            font-size: 0.72rem;
-            color: #5d6b64;
-            font-weight: 450;
+            font-family: 'SF Mono', 'JetBrains Mono', 'Menlo', 'Consolas', monospace;
+            font-size: 0.85rem;
+            color: #5d726b;
+            font-weight: 400;
+            letter-spacing: 0.3px;
+            text-transform: uppercase;
         }
-        /* Gregorian row */
+        
+        /* Gregorian row - matching size but slightly lighter */
         .greg-row {
             display: flex;
             flex-wrap: wrap;
             justify-content: space-between;
-            gap: 0.3rem;
+            align-items: baseline;
+            font-size: 0.9rem;
         }
         #currentDate {
-            font-family: 'SF Mono', 'JetBrains Mono', monospace;
-            font-size: 0.72rem;
-            color: #5d6b64;
+            font-family: 'SF Mono', 'JetBrains Mono', 'Menlo', 'Consolas', monospace;
+            font-size: 0.9rem;
+            color: #2d424b;
+            font-weight: 500;
         }
         #tzOffset {
-            font-family: 'SF Mono', 'JetBrains Mono', monospace;
-            font-size: 0.72rem;
-            color: #5d6b64;
+            font-family: 'SF Mono', 'JetBrains Mono', 'Menlo', 'Consolas', monospace;
+            font-size: 0.85rem;
+            color: #5d726b;
+            font-weight: 400;
         }
 
         .error-note { color: #b44e3a; font-size: 0.75rem; min-height: 1.2rem; margin-top: 0.5rem; }
@@ -212,7 +219,7 @@
         <div class="map-panel">
             <div id="map"></div>
             <div class="map-overlay">
-                <span>📍</span>
+                <span></span>
                 <span id="mapLatLng">--°N --°E</span>
             </div>
         </div>
@@ -232,7 +239,7 @@
                 <div class="prayer-item"><span class="name">Isha</span><span class="time" id="isha">--:--</span></div>
             </div>
 
-            <!-- Footnote: Hijri row on top, Gregorian row below — identical mono font/color -->
+            <!-- Footnote: Improved typography - larger, clearer fonts -->
             <div class="footnote">
                 <div class="hijri-row">
                     <span id="hijriDate">—</span>
@@ -435,11 +442,16 @@
                 $('maghrib').textContent = formatInTz(pt.maghrib, tz);
                 $('isha').textContent    = formatInTz(pt.isha,    tz);
 
-                // Dates in footnote
-                $('hijriDate').textContent  = hijriDateStr(now);
-                $('currentDate').textContent = now.toLocaleDateString('en-US', {
-                    timeZone: tz, month: 'short', day: 'numeric', year: 'numeric'
+                // Dates in footnote - use the same timezone-aware date
+                const locDate = now.toLocaleDateString('en-US', {
+                    timeZone: tz,
+                    month: 'short',
+                    day: 'numeric',
+                    year: 'numeric'
                 });
+                
+                $('hijriDate').textContent  = hijriDateStr(now);
+                $('currentDate').textContent = locDate;
                 $('tzOffset').textContent = tzLabel(tz, now);
 
                 errorEl.textContent = '';
