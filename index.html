@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>salaat · map — precision prayer times</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <!-- Inter font — clean, modern, widely used in tech -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600&display=swap" rel="stylesheet">
@@ -21,7 +20,6 @@
             letter-spacing: -0.01em;
         }
 
-        /* --- minimal, high-contrast header --- */
         .top {
             display: flex;
             justify-content: space-between;
@@ -42,13 +40,15 @@
             margin-right: 0.3rem;
             font-weight: 350;
         }
+
+        /* --- method selector: arrow drastically moved left (without removing it) --- */
         .method-wrap {
             background: #f1f4f7;
             border-radius: 40px;
-            padding: 0.3rem 0.3rem 0.3rem 1.2rem;
+            padding: 0.3rem 0.3rem 0.3rem 0.2rem;    /* left padding almost zero – arrow hugs the left */
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 0px;                                 /* no gap, arrow touches the text container */
             border: 1px solid #dde3e9;
             box-shadow: 0 2px 6px rgba(0,0,0,0.02);
         }
@@ -57,6 +57,8 @@
             font-weight: 500;
             font-size: 0.85rem;
             letter-spacing: 0.2px;
+            padding-left: 6px;                         /* minimal breathing for "Method" text */
+            white-space: nowrap;
         }
         .method-wrap select {
             background: white;
@@ -64,12 +66,19 @@
             border-radius: 30px;
             font-size: 0.9rem;
             font-weight: 500;
-            padding: 0.45rem 1.2rem 0.45rem 1rem;
+            /* critical: reduce left padding to drag arrow left, keep right padding for arrow */
+            padding: 0.45rem 1.2rem 0.45rem 0.4rem;    /* left padding tiny → arrow appears far left */
             outline: none;
             color: #103745;
             cursor: pointer;
             box-shadow: 0 1px 3px rgba(0,0,0,0.02);
             border: 1px solid #d0dae3;
+            background-position-x: 10%;                /* additional tweak: arrow starts near left */
+            background-position: left 0.5rem center;    /* for Gecko, but we rely on padding */
+        }
+        /* ensure arrow icon stays original (browser default) but positioned via padding */
+        .method-wrap select {
+            text-indent: 0.1rem;                       /* tiny shift to keep text readable */
         }
 
         .main {
@@ -79,7 +88,6 @@
             background: #f5f7fa;
         }
 
-        /* --- map panel with subtle border --- */
         .map-panel {
             flex: 3;
             position: relative;
@@ -112,7 +120,6 @@
             font-weight: 500;
         }
 
-        /* --- right panel — pristine, airy, tech style --- */
         .times-panel {
             flex: 1.1;
             background: #ffffff;
@@ -125,7 +132,6 @@
             box-shadow: -4px 0 15px rgba(0,0,0,0.02);
         }
 
-        /* search row — subtle, high-end */
         .place-row {
             display: flex;
             gap: 10px;
@@ -169,7 +175,6 @@
             color: #043745;
         }
 
-        /* prayer times — minimal, bold numbers */
         .prayer-list {
             margin-top: 0;
             border-top: 1px solid #ecf2f7;
@@ -201,7 +206,6 @@
             letter-spacing: 0.3px;
         }
 
-        /* footnote — super clean, monochrome, labels on right */
         .footnote {
             margin-top: 2rem;
             display: flex;
@@ -210,30 +214,44 @@
             border-top: 1px solid #ecf2f7;
             padding-top: 1.5rem;
         }
+
         .hijri-row, .greg-row {
             display: flex;
             justify-content: space-between;
             align-items: baseline;
-            font-size: 0.95rem;
-            padding: 0.1rem 0;
+            padding: 0.5rem 0.2rem;
+            font-size: 1.1rem;
+            border-bottom: 1px solid #f0f5fa;
         }
-        /* both date values — exactly the same style */
-        #hijriDate, #currentDate {
-            font-family: 'JetBrains Mono', 'SF Mono', monospace;
-            font-size: 0.95rem;
-            font-weight: 520;
-            color: #1e4a5d;
+
+        .hijri-row span:first-child, .greg-row span:first-child {
+            font-weight: 460;
+            color: #2f5b6f;
+            font-size: 1.1rem;
             letter-spacing: -0.1px;
         }
-        #hijriLabel, #tzOffset {
-            font-family: 'Inter', sans-serif;
-            font-size: 0.85rem;
-            font-weight: 440;
-            color: #7a99aa;
-            text-transform: none;
-            letter-spacing: 0.1px;
+
+        .hijri-row span:last-child, .greg-row span:last-child {
+            font-family: 'JetBrains Mono', 'SF Mono', monospace;
+            font-size: 1.1rem;
+            font-weight: 540;
+            color: #0b4356;
+            background: none;
+            border: none;
+            padding: 0;
+            letter-spacing: 0.3px;
         }
-        /* error / hint — extremely subtle */
+
+        .greg-row span:last-child {
+            font-family: 'JetBrains Mono', 'SF Mono', monospace;
+            font-size: 1.1rem;
+            font-weight: 540;
+            color: #0b4356;
+            background: none;
+            border: none;
+            padding: 0;
+        }
+
         .error-note {
             color: #c1593a;
             font-size: 0.75rem;
@@ -249,22 +267,15 @@
             margin-top: 1rem !important;
             font-weight: 390;
         }
-
-        /* tiny loading indicator */
         .tz-loading {
             font-size: 0.65rem;
             color: #b0c7d2;
-        }
-
-        /* remove any weird leftover backgrounds */
-        .method-wrap select {
-            background: white;
         }
     </style>
 </head>
 <body>
     <div class="top">
-        <h2>prayer / map</h2>
+        <h2><span>☾</span> prayer / map</h2>
         <div class="method-wrap">
             <span>Method</span>
             <select id="methodSelect">
@@ -291,7 +302,7 @@
         <div class="times-panel">
             <div class="place-row">
                 <input type="text" id="cityInput" placeholder="City or place" value="Mecca">
-                <button id="searchBtn">🔍</button>
+                <button id="searchBtn">Search</button>
             </div>
 
             <div class="prayer-list">
@@ -303,7 +314,6 @@
                 <div class="prayer-item"><span class="name">Isha</span><span class="time" id="isha">--:--</span></div>
             </div>
 
-            <!-- Footnote: absolutely clean, both dates identical font -->
             <div class="footnote">
                 <div class="hijri-row">
                     <span id="hijriDate">—</span>
@@ -325,13 +335,10 @@
 
     <script>
     (function () {
-
-        // ── state ─────────────────────────────────────────────────────────
-        let lat = 21.4225, lng = 39.8262; // Mecca default
+        let lat = 21.4225, lng = 39.8262;
         let locationTimezone = 'Asia/Riyadh';
         let map, marker;
 
-        // ── adhan params ──────────────────────────────────────────────────
         function getCalcParams(name) {
             switch (name) {
                 case 'Jafari': {
@@ -352,9 +359,7 @@
             }
         }
 
-        // ── timezone resolver ─────────────────────────────────────────────
         async function fetchTimezone(la, lo) {
-            // attempt 1: timeapi.io
             try {
                 const res = await fetch(
                     `https://timeapi.io/api/timezone/coordinate?latitude=${la}&longitude=${lo}`,
@@ -365,13 +370,11 @@
                     if (d && d.timeZone) return d.timeZone;
                 }
             } catch {}
-            // fallback: longitude estimate
             const rawOffset = Math.round(lo / 15);
             const offset = Math.max(-12, Math.min(12, rawOffset));
             return `Etc/GMT${offset <= 0 ? '+' : ''}${-offset}`;
         }
 
-        // ── format time in target TZ ──────────────────────────────────────
         function formatInTz(dateObj, tz) {
             if (!dateObj || isNaN(dateObj)) return '--:--';
             try {
@@ -390,7 +393,6 @@
             }
         }
 
-        // ── UTC offset label ──────────────────────────────────────────────
         function tzLabel(tz, date) {
             try {
                 const parts = new Intl.DateTimeFormat('en', {
@@ -405,7 +407,6 @@
             }
         }
 
-        // ── Hijri date (Kuwaiti algorithm) ────────────────────────────────
         function hijriDateStr(d) {
             d = d || new Date();
             const day = d.getDate(), mo = d.getMonth() + 1, yr = d.getFullYear();
@@ -428,7 +429,6 @@
             return `${hd} ${MONTHS[(hm-1)%12]} ${hy}`;
         }
 
-        // ── DOM shortcuts ─────────────────────────────────────────────────
         const $ = id => document.getElementById(id);
         const cityInput    = $('cityInput');
         const searchBtn    = $('searchBtn');
@@ -436,7 +436,6 @@
         const mapLatLngEl  = $('mapLatLng');
         const errorEl      = $('errorMsg');
 
-        // ── refresh all times ─────────────────────────────────────────────
         function refreshTimes() {
             try {
                 const now    = new Date();
@@ -451,7 +450,7 @@
                 const pt = new adhan.PrayerTimes(coords, calcDate, params);
 
                 $('fajr').textContent    = formatInTz(pt.fajr,    tz);
-                $('sunrise').textContent = formatInTz(pt.sunrise,  tz);
+                $('sunrise').textContent = formatInTz(pt.sunrise, tz);
                 $('dhuhr').textContent   = formatInTz(pt.dhuhr,   tz);
                 $('asr').textContent     = formatInTz(pt.asr,     tz);
                 $('maghrib').textContent = formatInTz(pt.maghrib, tz);
@@ -465,6 +464,7 @@
                 });
 
                 $('hijriDate').textContent  = hijriDateStr(now);
+                $('hijriLabel').textContent = 'Hijri';
                 $('currentDate').textContent = locDate;
                 $('tzOffset').textContent   = tzLabel(tz, now);
 
@@ -475,7 +475,6 @@
             }
         }
 
-        // ── location changed handler ──────────────────────────────────────
         async function onLocationChange(newLat, newLng, knownTz) {
             lat = newLat; lng = newLng;
             const latDir = lat >= 0 ? 'N' : 'S';
@@ -491,7 +490,6 @@
             refreshTimes();
         }
 
-        // ── reverse geocode (city name) ───────────────────────────────────
         async function fetchCityName(la, lo) {
             try {
                 const res  = await fetch(
@@ -508,7 +506,6 @@
             }
         }
 
-        // ── forward geocode ───────────────────────────────────────────────
         async function searchCity(query) {
             if (!query) return;
             errorEl.textContent = '';
@@ -533,7 +530,6 @@
             }
         }
 
-        // ── ip geolocation startup ────────────────────────────────────────
         async function initUserLocation() {
             try {
                 const res  = await fetch('https://ipapi.co/json/', { signal: AbortSignal.timeout(5000) });
@@ -553,7 +549,6 @@
             await onLocationChange(lat, lng, 'Asia/Riyadh');
         }
 
-        // ── map initialisation ────────────────────────────────────────────
         function initMap() {
             map = L.map('map', { zoomControl: false }).setView([lat, lng], 5);
             L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
@@ -576,7 +571,6 @@
             initUserLocation();
         }
 
-        // ── event listeners ───────────────────────────────────────────────
         searchBtn.addEventListener('click',  () => searchCity(cityInput.value.trim()));
         cityInput.addEventListener('keypress', e => { if (e.key === 'Enter') searchCity(cityInput.value.trim()); });
         methodSelect.addEventListener('change', refreshTimes);
