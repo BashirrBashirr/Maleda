@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>salaat · map — satellite toggle · ring marker</title>
+    <title>salaat · map — satellite toggle · ring marker · no coords</title>
     <!-- Leaflet & fonts -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -91,27 +91,6 @@
             width: 100%;
             height: 100%;
             background: #b3c5d4;  /* slightly richer grey – hides white tiles better */
-        }
-        .map-overlay {
-            position: absolute;
-            bottom: 24px;
-            left: 24px;
-            background: #ffffff;
-            backdrop-filter: blur(10px);
-            padding: 0.6rem 1.4rem;
-            border-radius: 40px;
-            font-size: 0.9rem;
-            border: 1px solid #d2dde5;
-            box-shadow: 0 8px 18px rgba(0,0,0,0.04);
-            color: #103f4f;
-            display: flex;
-            gap: 12px;
-            font-weight: 480;
-            z-index: 1000;
-        }
-        .map-overlay span {
-            font-family: 'SF Mono', monospace;
-            font-weight: 500;
         }
 
         /* --- zoom buttons (same style) --- */
@@ -335,10 +314,7 @@
                 <button class="zoom-btn" id="zoomInBtn">+</button>
                 <button class="zoom-btn" id="zoomOutBtn">−</button>
             </div>
-            <div class="map-overlay">
-                <span>📍</span>
-                <span id="mapLatLng">--°N --°E</span>
-            </div>
+            <!-- COORDINATES BOX COMPLETELY REMOVED (was map-overlay) -->
         </div>
 
         <div class="times-panel">
@@ -553,7 +529,8 @@
         }
 
         const $ = id => document.getElementById(id);
-        const cityInput = $('cityInput'), searchBtn = $('searchBtn'), methodSelect = $('methodSelect'), mapLatLngEl = $('mapLatLng'), errorEl = $('errorMsg');
+        const cityInput = $('cityInput'), searchBtn = $('searchBtn'), methodSelect = $('methodSelect'), errorEl = $('errorMsg');
+        // mapLatLng element removed because overlay is gone
 
         function refreshTimes() {
             try {
@@ -583,8 +560,7 @@
 
         async function onLocationChange(newLat, newLng, knownTz) {
             lat = newLat; lng = newLng;
-            const latDir = lat >= 0 ? 'N' : 'S', lngDir = lng >= 0 ? 'E' : 'W';
-            mapLatLngEl.textContent = `${Math.abs(lat).toFixed(2)}°${latDir} ${Math.abs(lng).toFixed(2)}°${lngDir}`;
+            // No longer updating any coordinate display element
             ['fajr','sunrise','dhuhr','asr','maghrib','isha'].forEach(id => $(id).textContent = '—:—');
             locationTimezone = knownTz || await fetchTimezone(lat, lng);
             refreshTimes();
