@@ -10,84 +10,14 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600&display=swap" rel="stylesheet">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-
-        /* ── Light mode variables ── */
-        :root {
-            --bg:           #f5f7fa;
-            --surface:      #ffffff;
-            --border:       #e9ecf0;
-            --border2:      #d8e0e7;
-            --border3:      #ecf0f4;
-            --border4:      #f0f5fa;
-            --border5:      #d2dde5;
-            --border6:      #d1dee8;
-            --border7:      #ecf2f7;
-            --border8:      #d8e8f0;
-            --text-h:       #0b2b3a;
-            --text-main:    #1a2e3b;
-            --text-mid:     #2f5b6f;
-            --text-strong:  #0b4356;
-            --text-input:   #1e3f4e;
-            --text-label:   #1b4759;
-            --text-select:  #103745;
-            --text-method:  #103f4f;
-            --input-bg:     #f8fafc;
-            --method-bg:    #f1f4f7;
-            --btn-bg:       #eef4f8;
-            --btn-hover:    #e3ecf3;
-            --time-bg:      #f2f9ff;
-            --pill-bg:      #f2f9ff;
-            --overlay-bg:   #ffffff;
-            --map-bg:       #eef2f4;
-            --hint-color:   #8d988b;
-            --error-color:  #c1593a;
-            --sun-color:    #e0a800;
-            --sun-idle:     #8aa6b4;
-        }
-
-        /* ── Night mode variables ── */
-        body.night {
-            --bg:           #000000;
-            --surface:      #000000;
-            --border:       #007a1f;
-            --border2:      #007a1f;
-            --border3:      #007a1f;
-            --border4:      #003a0e;
-            --border5:      #007a1f;
-            --border6:      #007a1f;
-            --border7:      #007a1f;
-            --border8:      #007a1f;
-            --text-h:       #00ff41;
-            --text-main:    #00ff41;
-            --text-mid:     #00ff41;
-            --text-strong:  #00ff41;
-            --text-input:   #00ff41;
-            --text-label:   #00ff41;
-            --text-select:  #00ff41;
-            --text-method:  #00ff41;
-            --input-bg:     #003a0e;
-            --method-bg:    #003a0e;
-            --btn-bg:       #003a0e;
-            --btn-hover:    #005516;
-            --time-bg:      #003a0e;
-            --pill-bg:      #003a0e;
-            --overlay-bg:   #000000;
-            --map-bg:       #000000;
-            --hint-color:   #007a1f;
-            --error-color:  #00ff41;
-            --sun-color:    #00ff41;
-            --sun-idle:     #00ff41;
-        }
-
         body {
-            background: var(--bg);
+            background: #f5f7fa;
             font-family: 'Inter', -apple-system, system-ui, sans-serif;
             height: 100vh;
             display: flex;
             flex-direction: column;
-            color: var(--text-main);
+            color: #1a2e3b;
             letter-spacing: -0.01em;
-            transition: background 0.25s, color 0.25s;
         }
 
         .top {
@@ -95,176 +25,98 @@
             justify-content: space-between;
             align-items: center;
             padding: 1rem 2rem;
-            background: var(--surface);
-            border-bottom: 1px solid var(--border);
+            background: #ffffff;
+            border-bottom: 1px solid #e9ecf0;
             font-weight: 420;
-            transition: background 0.25s, border-color 0.25s;
         }
         .top h2 {
             font-weight: 440;
             font-size: 1.4rem;
-            color: var(--text-h);
+            color: #0b2b3a;
             letter-spacing: -0.3px;
-            transition: color 0.25s;
+        }
+        .top h2 span {
+            display: none;      /* emoji removed */
         }
 
-        /* top-right cluster: method + night btn */
-        .top-right {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        /* ── iOS toggle switch ── */
-        .night-btn {
-            background: none;
-            border: none;
-            cursor: pointer;
-            padding: 0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-shrink: 0;
-            -webkit-tap-highlight-color: transparent;
-        }
-
-        .ios-toggle {
-            position: relative;
-            width: 46px;
-            height: 26px;
-            flex-shrink: 0;
-        }
-
-        /* track */
-        .ios-toggle-track {
-            position: absolute;
-            inset: 0;
-            border-radius: 13px;
-            background: #e2e2e2;
-            transition: background 0.28s ease;
-        }
-        body.night .ios-toggle-track {
-            background: #00ff41;
-        }
-
-        /* thumb */
-        .ios-toggle-thumb {
-            position: absolute;
-            top: 2px;
-            left: 2px;
-            width: 22px;
-            height: 22px;
-            border-radius: 50%;
-            background: #ffffff;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.28), 0 1px 2px rgba(0,0,0,0.18);
-            transition: transform 0.28s ease;
-        }
-        body.night .ios-toggle-thumb {
-            transform: translateX(20px);
-        }
-
-        /* method wrap */
+        /* --- METHOD SELECTOR: extra separation between "Method" and white box --- */
         .method-wrap {
-            background: var(--method-bg);
+            background: #f1f4f7;
             border-radius: 40px;
-            padding: 0.3rem 0.3rem 0.3rem 0rem;
+            padding: 0.3rem 0.3rem 0.3rem 0rem;    /* zero left padding */
             display: flex;
             align-items: center;
-            gap: 12px;
-            border: 1px solid var(--border2);
+            gap: 12px;                               /* ← increased gap: now 12px between span and select */
+            border: 1px solid #dde3e9;
             box-shadow: 0 2px 6px rgba(0,0,0,0.02);
-            transition: background 0.25s, border-color 0.25s;
         }
         .method-wrap span {
-            color: var(--text-label);
+            color: #1b4759;
             font-weight: 500;
             font-size: 0.85rem;
             letter-spacing: 0.2px;
-            padding-left: 14px;
-            padding-right: 0px;
+            padding-left: 14px;                      /* "Method" indentation */
+            padding-right: 0px;                       
             white-space: nowrap;
-            transition: color 0.25s;
         }
         .method-wrap select {
-            background: var(--surface);
+            background: white;
             border: none;
             border-radius: 30px;
             font-size: 0.9rem;
             font-weight: 500;
-            padding: 0.45rem 2rem 0.45rem 1rem;
+            /* left padding gives space between edge of white box and "MWL" text */
+            padding: 0.45rem 2rem 0.45rem 1rem;      /* extra right padding for arrow, left comfortable */
             outline: none;
-            color: var(--text-select);
+            color: #103745;
             cursor: pointer;
             box-shadow: 0 1px 3px rgba(0,0,0,0.02);
-            border: 1px solid var(--border6);
+            border: 1px solid #d0dae3;
+            
+            /* custom arrow (black) */
             appearance: none;
             -webkit-appearance: none;
             -moz-appearance: none;
+            background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23103745' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'/></svg>");
             background-repeat: no-repeat;
             background-position: right 0.8rem center;
             background-size: 16px;
-            transition: background-color 0.25s, color 0.25s, border-color 0.25s;
-        }
-        /* arrow icon — swapped per mode */
-        body:not(.night) .method-wrap select {
-            background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23103745' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'/></svg>");
-        }
-        body.night .method-wrap select {
-            background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2300ff41' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'/></svg>");
         }
         .method-wrap select::-ms-expand { display: none; }
-
-        /* night: style select options */
-        body.night .method-wrap select option {
-            background: #000;
-            color: #00ff41;
-        }
 
         .main {
             display: flex;
             flex: 1;
             overflow: hidden;
-            background: var(--bg);
-            transition: background 0.25s;
+            background: #f5f7fa;
         }
 
         .map-panel {
             flex: 3;
             position: relative;
-            background: var(--map-bg);
-            border-right: 1px solid var(--border2);
-            transition: background 0.25s, border-color 0.25s;
+            background: #eef2f4;
+            border-right: 1px solid #d8e0e7;
         }
         #map {
             width: 100%;
             height: 100%;
-            background: var(--map-bg);
+            background: #e1e8ed;
         }
-
-        /* night map tile inversion */
-        body.night #map .leaflet-tile-pane {
-            filter: invert(1) hue-rotate(180deg) saturate(0.3) brightness(0.55) sepia(0.6) hue-rotate(70deg);
-        }
-        body.night #map .leaflet-control {
-            filter: invert(1) hue-rotate(180deg);
-        }
-
         .map-overlay {
             position: absolute;
             bottom: 24px;
             left: 24px;
-            background: var(--overlay-bg);
+            background: #ffffff;
             backdrop-filter: blur(10px);
             padding: 0.6rem 1.4rem;
             border-radius: 40px;
             font-size: 0.9rem;
-            border: 1px solid var(--border5);
+            border: 1px solid #d2dde5;
             box-shadow: 0 8px 18px rgba(0,0,0,0.04);
-            color: var(--text-method);
+            color: #103f4f;
             display: flex;
             gap: 12px;
             font-weight: 480;
-            transition: background 0.25s, border-color 0.25s, color 0.25s;
         }
         .map-overlay span {
             font-family: 'SF Mono', 'JetBrains Mono', monospace;
@@ -273,34 +125,29 @@
 
         .times-panel {
             flex: 1.1;
-            background: var(--surface);
+            background: #ffffff;
             display: flex;
             flex-direction: column;
             overflow-y: auto;
             padding: 2rem 1.8rem;
-            border-left: 1px solid var(--border3);
+            border-left: 1px solid #ecf0f4;
             min-width: 280px;
             box-shadow: -4px 0 15px rgba(0,0,0,0.02);
-            transition: background 0.25s, border-color 0.25s;
         }
 
         .place-row {
             display: flex;
             gap: 10px;
             margin-bottom: 2.2rem;
-            background: var(--input-bg);
+            background: #f8fafc;
             padding: 0.2rem 0.2rem 0.2rem 1.5rem;
             border-radius: 48px;
-            border: 1px solid var(--border3);
-            transition: border 0.15s, background 0.25s;
+            border: 1px solid #e3eaf0;
+            transition: border 0.15s;
         }
         .place-row:focus-within {
             border-color: #5f9db8;
             box-shadow: 0 0 0 3px rgba(95,157,184,0.08);
-        }
-        body.night .place-row:focus-within {
-            border-color: #00ff41;
-            box-shadow: 0 0 0 3px rgba(0,255,65,0.08);
         }
         .place-row input {
             flex: 1;
@@ -309,63 +156,57 @@
             font-size: 0.95rem;
             padding: 0.7rem 0;
             outline: none;
-            color: var(--text-input);
+            color: #1e3f4e;
             font-weight: 430;
-            transition: color 0.25s;
         }
-        .place-row input::placeholder { color: var(--hint-color); }
         .place-row button {
-            background: var(--btn-bg);
+            background: #eef4f8;
             border: none;
             border-radius: 40px;
             padding: 0.6rem 1.6rem;
             font-size: 0.9rem;
             font-weight: 560;
-            color: var(--text-label);
+            color: #135467;
             cursor: pointer;
-            transition: background 0.1s, border-color 0.1s, color 0.25s;
-            border: 1px solid var(--border6);
+            transition: 0.1s;
+            border: 1px solid #d1dee8;
             box-shadow: 0 2px 4px rgba(0,0,0,0.02);
         }
         .place-row button:hover {
-            background: var(--btn-hover);
-            border-color: var(--border2);
-            color: var(--text-h);
+            background: #e3ecf3;
+            border-color: #8fb4c9;
+            color: #043745;
         }
 
         .prayer-list {
             margin-top: 0;
-            border-top: 1px solid var(--border7);
+            border-top: 1px solid #ecf2f7;
             padding-top: 1rem;
-            transition: border-color 0.25s;
         }
         .prayer-item {
             display: flex;
             justify-content: space-between;
             align-items: center;
             padding: 0.9rem 0.2rem;
-            border-bottom: 1px solid var(--border4);
+            border-bottom: 1px solid #f0f5fa;
             font-size: 1.3rem;
-            transition: border-color 0.25s;
         }
         .prayer-item .name {
             font-weight: 460;
-            color: var(--text-mid);
+            color: #2f5b6f;
             font-size: 1.1rem;
             letter-spacing: -0.1px;
-            transition: color 0.25s;
         }
         .prayer-item .time {
             font-family: 'JetBrains Mono', 'SF Mono', monospace;
             font-size: 1.2rem;
             font-weight: 540;
-            color: var(--text-strong);
-            background: var(--time-bg);
+            color: #0b4356;
+            background: #f2f9ff;
             padding: 0.25rem 1.1rem;
             border-radius: 40px;
-            border: 1px solid var(--border8);
+            border: 1px solid #d8e8f0;
             letter-spacing: 0.3px;
-            transition: background 0.25s, color 0.25s, border-color 0.25s;
         }
 
         .footnote {
@@ -373,99 +214,83 @@
             display: flex;
             flex-direction: column;
             gap: 0.6rem;
-            border-top: 1px solid var(--border7);
+            border-top: 1px solid #ecf2f7;
             padding-top: 1.5rem;
-            transition: border-color 0.25s;
         }
+
         .hijri-row, .greg-row {
             display: flex;
             justify-content: space-between;
             align-items: baseline;
             padding: 0.5rem 0.2rem;
-            border-bottom: 1px solid var(--border4);
-            transition: border-color 0.25s;
+            border-bottom: 1px solid #f0f5fa;
         }
+
+        /* left labels */
         .hijri-row span:first-child, .greg-row span:first-child {
             font-weight: 460;
-            color: var(--text-mid);
+            color: #2f5b6f;
             font-size: 1.1rem;
             letter-spacing: -0.1px;
-            transition: color 0.25s;
         }
+
+        /* Hijri value */
         .hijri-row span:last-child {
             font-family: 'Inter', sans-serif;
             font-size: 1.1rem;
             font-weight: 460;
-            color: var(--text-mid);
+            color: #2f5b6f;
             background: none;
             border: none;
             padding: 0;
             letter-spacing: -0.1px;
-            transition: color 0.25s;
         }
+
+        /* GMT offset – pixel‑perfect match of hijri style (no bold, no black) */
         .greg-row span:last-child {
             font-family: 'Inter', sans-serif;
             font-size: 1.1rem;
             font-weight: 460;
-            color: var(--text-mid);
+            color: #2f5b6f;
             background: none;
             border: none;
             padding: 0;
             letter-spacing: -0.1px;
-            transition: color 0.25s;
         }
 
         .error-note {
-            color: var(--error-color);
+            color: #c1593a;
             font-size: 0.75rem;
             min-height: 1.2rem;
             margin-top: 0.3rem;
             font-weight: 440;
-            transition: color 0.25s;
         }
+        /* --- hint line: now moved to left, aligned with other rows --- */
         .hint-row {
             margin-top: 0.8rem;
             font-size: 0.7rem;
-            color: var(--hint-color);
+            color: #8d988b;
             font-weight: 390;
             letter-spacing: 0.1px;
-            text-align: left;
-            transition: color 0.25s;
-        }
-
-        /* marker: phosphor green tint in both modes */
-        .leaflet-marker-icon {
-            filter: hue-rotate(90deg) saturate(4) brightness(0.7) sepia(0.4) hue-rotate(50deg);
-        }
-        body.night .leaflet-marker-icon {
-            filter: hue-rotate(90deg) saturate(5) brightness(1.1) sepia(0.3) hue-rotate(55deg);
+            text-align: left;            /* left aligned, not right */
+            border-top: none;            /* remove any extra border */
         }
     </style>
 </head>
 <body>
     <div class="top">
-        <h2>Salah Tracker</h2>
-        <div class="top-right">
-            <div class="method-wrap">
-                <span>Method</span>
-                <select id="methodSelect">
-                    <option value="MWL" selected>MWL</option>
-                    <option value="Jafari">Jafari</option>
-                    <option value="Karachi">Karachi</option>
-                    <option value="ISNA">ISNA</option>
-                    <option value="Makkah">Makkah</option>
-                    <option value="Egypt">Egypt</option>
-                    <option value="Tehran">Tehran</option>
-                </select>
-            </div>
-
-            <!-- Night mode toggle: iOS-style pill switch -->
-            <button class="night-btn" id="nightBtn" title="Toggle night mode" aria-label="Toggle night mode">
-                <div class="ios-toggle">
-                    <div class="ios-toggle-track"></div>
-                    <div class="ios-toggle-thumb"></div>
-                </div>
-            </button>
+        <h2><span></span>Salah Tracker</h2>   <!-- no emoji -->
+        <div class="method-wrap">
+            <span>Method</span>
+            <select id="methodSelect">
+                <option value="MWL" selected>MWL</option>
+                <option value="Jafari">Jafari</option>
+                <option value="Karachi">Karachi</option>
+                <option value="ISNA">ISNA</option>
+                <option value="Makkah">Makkah</option>
+                <option value="Egypt">Egypt</option>
+                <option value="Tehran">Tehran</option>
+            </select>
         </div>
     </div>
 
@@ -505,6 +330,7 @@
             </div>
 
             <div id="errorMsg" class="error-note"></div>
+            <!-- moved hint to the left, directly below tz row, with left alignment -->
             <div class="hint-row">click map · city name appears</div>
         </div>
     </div>
@@ -517,12 +343,6 @@
         let lat = 21.4225, lng = 39.8262;
         let locationTimezone = 'Asia/Riyadh';
         let map, marker;
-
-        /* ── Night mode toggle ── */
-        const nightBtn = document.getElementById('nightBtn');
-        nightBtn.addEventListener('click', () => {
-            document.body.classList.toggle('night');
-        });
 
         function getCalcParams(name) {
             switch (name) {
@@ -564,11 +384,16 @@
             if (!dateObj || isNaN(dateObj)) return '--:--';
             try {
                 return dateObj.toLocaleTimeString('en-GB', {
-                    timeZone: tz, hour: '2-digit', minute: '2-digit', hour12: false
+                    timeZone: tz,
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    hour12: false
                 });
             } catch {
                 try {
-                    return dateObj.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false });
+                    return dateObj.toLocaleTimeString('en-GB', {
+                        hour: '2-digit', minute: '2-digit', hour12: false
+                    });
                 } catch { return '--:--'; }
             }
         }
@@ -576,7 +401,8 @@
         function tzLabel(tz, date) {
             try {
                 const parts = new Intl.DateTimeFormat('en', {
-                    timeZone: tz, timeZoneName: 'shortOffset'
+                    timeZone: tz,
+                    timeZoneName: 'shortOffset'
                 }).formatToParts(date);
                 const p = parts.find(x => x.type === 'timeZoneName');
                 return p ? p.value : '';
@@ -636,7 +462,10 @@
                 $('isha').textContent    = formatInTz(pt.isha,    tz);
 
                 const locDate = now.toLocaleDateString('en-US', {
-                    timeZone: tz, month: 'short', day: 'numeric', year: 'numeric'
+                    timeZone: tz,
+                    month: 'short',
+                    day: 'numeric',
+                    year: 'numeric'
                 });
 
                 $('hijriDate').textContent  = hijriDateStr(now);
