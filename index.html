@@ -3,11 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>salaat · map — precision prayer times</title>
+    <title>salaat · map — custom ring marker (opt7 #3) · BIGGER visible</title>
+    <!-- Leaflet & fonts -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600&display=swap" rel="stylesheet">
+    <!-- Three.js for ring render -->
+    <script src="https://cdn.jsdelivr.net/npm/three@0.153.0/build/three.min.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -35,28 +38,21 @@
             color: #0b2b3a;
             letter-spacing: -0.3px;
         }
-        .top h2 span {
-            display: none;      /* emoji removed */
-        }
 
-        /* --- METHOD SELECTOR: extra separation between "Method" and white box --- */
         .method-wrap {
             background: #f1f4f7;
             border-radius: 40px;
-            padding: 0.3rem 0.3rem 0.3rem 0rem;    /* zero left padding */
+            padding: 0.3rem 0.3rem 0.3rem 0rem;
             display: flex;
             align-items: center;
-            gap: 12px;                               /* ← increased gap: now 12px between span and select */
+            gap: 12px;
             border: 1px solid #dde3e9;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.02);
         }
         .method-wrap span {
             color: #1b4759;
             font-weight: 500;
             font-size: 0.85rem;
-            letter-spacing: 0.2px;
-            padding-left: 14px;                      /* "Method" indentation */
-            padding-right: 0px;                       
+            padding-left: 14px;
             white-space: nowrap;
         }
         .method-wrap select {
@@ -65,24 +61,18 @@
             border-radius: 30px;
             font-size: 0.9rem;
             font-weight: 500;
-            /* left padding gives space between edge of white box and "MWL" text */
-            padding: 0.45rem 2rem 0.45rem 1rem;      /* extra right padding for arrow, left comfortable */
+            padding: 0.45rem 2rem 0.45rem 1rem;
             outline: none;
             color: #103745;
             cursor: pointer;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.02);
             border: 1px solid #d0dae3;
-            
-            /* custom arrow (black) */
             appearance: none;
             -webkit-appearance: none;
-            -moz-appearance: none;
             background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23103745' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'/></svg>");
             background-repeat: no-repeat;
             background-position: right 0.8rem center;
             background-size: 16px;
         }
-        .method-wrap select::-ms-expand { display: none; }
 
         .main {
             display: flex;
@@ -119,7 +109,7 @@
             font-weight: 480;
         }
         .map-overlay span {
-            font-family: 'SF Mono', 'JetBrains Mono', monospace;
+            font-family: 'SF Mono', monospace;
             font-weight: 500;
         }
 
@@ -132,7 +122,6 @@
             padding: 2rem 1.8rem;
             border-left: 1px solid #ecf0f4;
             min-width: 280px;
-            box-shadow: -4px 0 15px rgba(0,0,0,0.02);
         }
 
         .place-row {
@@ -143,11 +132,6 @@
             padding: 0.2rem 0.2rem 0.2rem 1.5rem;
             border-radius: 48px;
             border: 1px solid #e3eaf0;
-            transition: border 0.15s;
-        }
-        .place-row:focus-within {
-            border-color: #5f9db8;
-            box-shadow: 0 0 0 3px rgba(95,157,184,0.08);
         }
         .place-row input {
             flex: 1;
@@ -168,14 +152,7 @@
             font-weight: 560;
             color: #135467;
             cursor: pointer;
-            transition: 0.1s;
             border: 1px solid #d1dee8;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
-        }
-        .place-row button:hover {
-            background: #e3ecf3;
-            border-color: #8fb4c9;
-            color: #043745;
         }
 
         .prayer-list {
@@ -195,10 +172,9 @@
             font-weight: 460;
             color: #2f5b6f;
             font-size: 1.1rem;
-            letter-spacing: -0.1px;
         }
         .prayer-item .time {
-            font-family: 'JetBrains Mono', 'SF Mono', monospace;
+            font-family: 'JetBrains Mono', monospace;
             font-size: 1.2rem;
             font-weight: 540;
             color: #0b4356;
@@ -206,7 +182,6 @@
             padding: 0.25rem 1.1rem;
             border-radius: 40px;
             border: 1px solid #d8e8f0;
-            letter-spacing: 0.3px;
         }
 
         .footnote {
@@ -217,7 +192,6 @@
             border-top: 1px solid #ecf2f7;
             padding-top: 1.5rem;
         }
-
         .hijri-row, .greg-row {
             display: flex;
             justify-content: space-between;
@@ -225,17 +199,12 @@
             padding: 0.5rem 0.2rem;
             border-bottom: 1px solid #f0f5fa;
         }
-
-        /* left labels */
         .hijri-row span:first-child, .greg-row span:first-child {
             font-weight: 460;
             color: #2f5b6f;
             font-size: 1.1rem;
-            letter-spacing: -0.1px;
         }
-
-        /* Hijri value */
-        .hijri-row span:last-child {
+        .hijri-row span:last-child, .greg-row span:last-child {
             font-family: 'Inter', sans-serif;
             font-size: 1.1rem;
             font-weight: 460;
@@ -243,43 +212,25 @@
             background: none;
             border: none;
             padding: 0;
-            letter-spacing: -0.1px;
         }
-
-        /* GMT offset – pixel‑perfect match of hijri style (no bold, no black) */
-        .greg-row span:last-child {
-            font-family: 'Inter', sans-serif;
-            font-size: 1.1rem;
-            font-weight: 460;
-            color: #2f5b6f;
-            background: none;
-            border: none;
-            padding: 0;
-            letter-spacing: -0.1px;
-        }
-
         .error-note {
             color: #c1593a;
             font-size: 0.75rem;
             min-height: 1.2rem;
             margin-top: 0.3rem;
-            font-weight: 440;
         }
-        /* --- hint line: now moved to left, aligned with other rows --- */
         .hint-row {
             margin-top: 0.8rem;
             font-size: 0.7rem;
             color: #8d988b;
             font-weight: 390;
-            letter-spacing: 0.1px;
-            text-align: left;            /* left aligned, not right */
-            border-top: none;            /* remove any extra border */
+            text-align: left;
         }
     </style>
 </head>
 <body>
     <div class="top">
-        <h2><span></span>Salah Tracker</h2>   <!-- no emoji -->
+        <h2>Salah Tracker · BIGGER ring marker (opt7 #3 brass, visible)</h2>
         <div class="method-wrap">
             <span>Method</span>
             <select id="methodSelect">
@@ -328,10 +279,8 @@
                     <span id="tzOffset"></span>
                 </div>
             </div>
-
             <div id="errorMsg" class="error-note"></div>
-            <!-- moved hint to the left, directly below tz row, with left alignment -->
-            <div class="hint-row">click map · city name appears</div>
+            <div class="hint-row">⭐ BIGGER Kaaba ring marker (opt7 #3 brass, 52px canvas → 52px icon)</div>
         </div>
     </div>
 
@@ -339,7 +288,141 @@
     <script src="https://cdn.jsdelivr.net/npm/adhan@4.4.3/lib/bundles/adhan.umd.min.js"></script>
 
     <script>
-    (function () {
+    (function() {
+        // ------------------------------------------------------------------
+        // 1. render EXACT Kaaba ring (opt7 #3, brighter brass) – LARGER VISIBLE
+        //    Kept exact 3d proportions but output canvas 64px, icon size 52px (much bigger)
+        // ------------------------------------------------------------------
+        function generateRingIconCanvas(size = 64) {  // increased canvas resolution for sharpness
+            // exact kaaba & door dimensions (same as original)
+            const W = 3.5, H = 3.0, D = 3.2, centerY = H/2;
+            const STONE_POS = { x: -1.68, y: 0.85, z: D/2 - 0.30 };
+
+            // base config (identical lighting/material from replacement)
+            const BASE_CONFIG = {
+                ambient: 0.25, lightColor: 0xbbccee, lightIntensity: 1.0,
+                lightX: -3, lightY: 5, lightZ: 9, fill: true, backLight: true,
+                kaabaColor: 0x0a0a0a, roughness: 0.5, metalness: 0.3,
+                goldColor: 0xb5883b, goldEmissive: 0x332200,
+                goldRoughness: 0.3, goldMetalness: 0.7, edges: true
+            };
+            const DOOR_9 = { width: 0.61, height: 1.41, color: 0x785a32 };
+
+            // ----- LOCKED SIZE (opt7 #3 : factor 0.95 from original opt7) -----
+            const LOCKED_SIZE = {
+                radius: 0.44 * 0.95,        // 0.418
+                tube: 0.13 * 0.95,           // 0.1235
+                scaleX: 1.30 * 0.95,          // 1.235
+                scaleY: 0.62 * 0.95,          // 0.589
+                scaleZ: 1.26 * 0.95,          // 1.197
+                rotationY: 0.81,
+                rotationX: 0.34,
+                double: true,
+                yPos: 0.415                     // fixed Y position
+            };
+
+            // ---- SINGLE COLOR VARIATION: option 7 (light brass, brighter) ----
+            const selectedOption = {
+                color: 0xf0daa8,        // light brass
+                emissive: 0x5e4a2a,      // warm emissive 
+                roughness: 0.27,
+                metalness: 0.82
+            };
+
+            // setup canvas & scene
+            const canvas = document.createElement('canvas');
+            canvas.width = size;
+            canvas.height = size;
+            const scene = new THREE.Scene();
+            const camera = new THREE.PerspectiveCamera(42, 1, 0.1, 100);
+            camera.position.set(4.5, 2.7, 6.8);
+            camera.lookAt(0, 1.6, 0);
+            const renderer = new THREE.WebGLRenderer({ canvas, alpha: true });
+            renderer.setSize(size, size);
+            renderer.setClearColor(0x000000, 0);
+
+            // lighting
+            scene.add(new THREE.AmbientLight(0xffffff, BASE_CONFIG.ambient));
+            const mainLight = new THREE.DirectionalLight(BASE_CONFIG.lightColor, BASE_CONFIG.lightIntensity);
+            mainLight.position.set(BASE_CONFIG.lightX, BASE_CONFIG.lightY, BASE_CONFIG.lightZ);
+            scene.add(mainLight);
+            if (BASE_CONFIG.fill) {
+                const fill = new THREE.DirectionalLight(0xd4e8ff, 0.4);
+                fill.position.set(-5, 4, 6);
+                scene.add(fill);
+            }
+            if (BASE_CONFIG.backLight) {
+                const back = new THREE.DirectionalLight(0xffeedd, 0.3);
+                back.position.set(-4, 3, -8);
+                scene.add(back);
+            }
+
+            // Kaaba cube
+            const cubeMat = new THREE.MeshStandardMaterial({ color: BASE_CONFIG.kaabaColor, roughness: BASE_CONFIG.roughness, metalness: BASE_CONFIG.metalness });
+            const kaaba = new THREE.Mesh(new THREE.BoxGeometry(W, H, D), cubeMat);
+            kaaba.position.y = centerY;
+            scene.add(kaaba);
+
+            if (BASE_CONFIG.edges) {
+                const edges = new THREE.EdgesGeometry(kaaba.geometry);
+                const line = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: 0x2a2a2a }));
+                line.position.copy(kaaba.position);
+                scene.add(line);
+            }
+
+            // gold belt
+            const goldMat = new THREE.MeshStandardMaterial({ color: BASE_CONFIG.goldColor, emissive: BASE_CONFIG.goldEmissive, roughness: BASE_CONFIG.goldRoughness, metalness: BASE_CONFIG.goldMetalness });
+            const belt = new THREE.Mesh(new THREE.BoxGeometry(W + 0.15, 0.4, D + 0.15), goldMat);
+            belt.position.y = 2.0;
+            scene.add(belt);
+
+            // door 9
+            const doorMat = new THREE.MeshStandardMaterial({ color: DOOR_9.color, roughness: 0.5, metalness: 0.1 });
+            const door = new THREE.Mesh(new THREE.BoxGeometry(DOOR_9.width, DOOR_9.height, 0.12), doorMat);
+            door.position.set(-0.5, 0.3 + DOOR_9.height/2, D/2 + 0.10);
+            scene.add(door);
+
+            // black stone
+            const stoneGeo = new THREE.SphereGeometry(0.32, 36);
+            const stoneMat = new THREE.MeshStandardMaterial({ color: 0x1a1a1a, roughness: 0.25, metalness: 0.15, emissive: 0x050505 });
+            const stone = new THREE.Mesh(stoneGeo, stoneMat);
+            stone.scale.set(0.9, 0.55, 0.35);
+            stone.position.set(STONE_POS.x, STONE_POS.y, STONE_POS.z);
+            scene.add(stone);
+
+            // ring material (brass, brighter)
+            const ringMat = new THREE.MeshStandardMaterial({
+                color: selectedOption.color,
+                emissive: selectedOption.emissive,
+                roughness: selectedOption.roughness,
+                metalness: selectedOption.metalness,
+                emissiveIntensity: 0.2   // slight emissive boost for brighter appearance
+            });
+
+            // primary torus (smaller locked size)
+            const torusGeo = new THREE.TorusGeometry(LOCKED_SIZE.radius, LOCKED_SIZE.tube, 32, 64, Math.PI * 2);
+            const torus = new THREE.Mesh(torusGeo, ringMat);
+            torus.position.set(STONE_POS.x, LOCKED_SIZE.yPos, STONE_POS.z);
+            torus.rotation.y = LOCKED_SIZE.rotationY;
+            torus.rotation.x = LOCKED_SIZE.rotationX;
+            torus.scale.set(LOCKED_SIZE.scaleX, LOCKED_SIZE.scaleY, LOCKED_SIZE.scaleZ);
+            scene.add(torus);
+
+            // secondary (inner) ring
+            const torus2Geo = new THREE.TorusGeometry(LOCKED_SIZE.radius * 0.96, LOCKED_SIZE.tube * 0.8, 32, 64);
+            const torus2 = new THREE.Mesh(torus2Geo, ringMat);
+            torus2.position.copy(torus.position);
+            torus2.rotation.copy(torus.rotation);
+            torus2.scale.copy(torus.scale);
+            scene.add(torus2);
+
+            renderer.render(scene, camera);
+            return canvas;
+        }
+
+        // ------------------------------------------------------------------
+        // 2. original prayer times code + custom marker at Mecca
+        // ------------------------------------------------------------------
         let lat = 21.4225, lng = 39.8262;
         let locationTimezone = 'Asia/Riyadh';
         let map, marker;
@@ -348,32 +431,22 @@
             switch (name) {
                 case 'Jafari': {
                     const p = adhan.CalculationMethod.Tehran();
-                    p.fajrAngle    = 16;
-                    p.ishaAngle    = 14;
-                    p.maghribAngle = 4;
-                    p.ishaInterval = 0;
+                    p.fajrAngle = 16; p.ishaAngle = 14; p.maghribAngle = 4; p.ishaInterval = 0;
                     return p;
                 }
                 case 'Karachi': return adhan.CalculationMethod.Karachi();
-                case 'ISNA':    return adhan.CalculationMethod.NorthAmerica();
-                case 'Makkah':  return adhan.CalculationMethod.UmmAlQura();
-                case 'Egypt':   return adhan.CalculationMethod.Egyptian();
-                case 'Tehran':  return adhan.CalculationMethod.Tehran();
-                case 'MWL':
-                default:        return adhan.CalculationMethod.MuslimWorldLeague();
+                case 'ISNA': return adhan.CalculationMethod.NorthAmerica();
+                case 'Makkah': return adhan.CalculationMethod.UmmAlQura();
+                case 'Egypt': return adhan.CalculationMethod.Egyptian();
+                case 'Tehran': return adhan.CalculationMethod.Tehran();
+                default: return adhan.CalculationMethod.MuslimWorldLeague();
             }
         }
 
         async function fetchTimezone(la, lo) {
             try {
-                const res = await fetch(
-                    `https://timeapi.io/api/timezone/coordinate?latitude=${la}&longitude=${lo}`,
-                    { signal: AbortSignal.timeout(5000) }
-                );
-                if (res.ok) {
-                    const d = await res.json();
-                    if (d && d.timeZone) return d.timeZone;
-                }
+                const res = await fetch(`https://timeapi.io/api/timezone/coordinate?latitude=${la}&longitude=${lo}`, { signal: AbortSignal.timeout(5000) });
+                if (res.ok) { const d = await res.json(); if (d?.timeZone) return d.timeZone; }
             } catch {}
             const rawOffset = Math.round(lo / 15);
             const offset = Math.max(-12, Math.min(12, rawOffset));
@@ -382,171 +455,104 @@
 
         function formatInTz(dateObj, tz) {
             if (!dateObj || isNaN(dateObj)) return '--:--';
-            try {
-                return dateObj.toLocaleTimeString('en-GB', {
-                    timeZone: tz,
-                    hour: '2-digit',
-                    minute: '2-digit',
-                    hour12: false
-                });
-            } catch {
-                try {
-                    return dateObj.toLocaleTimeString('en-GB', {
-                        hour: '2-digit', minute: '2-digit', hour12: false
-                    });
-                } catch { return '--:--'; }
-            }
+            try { return dateObj.toLocaleTimeString('en-GB', { timeZone: tz, hour: '2-digit', minute: '2-digit', hour12: false }); }
+            catch { return '--:--'; }
         }
 
         function tzLabel(tz, date) {
-            try {
-                const parts = new Intl.DateTimeFormat('en', {
-                    timeZone: tz,
-                    timeZoneName: 'shortOffset'
-                }).formatToParts(date);
-                const p = parts.find(x => x.type === 'timeZoneName');
-                return p ? p.value : '';
-            } catch {
-                const off = -date.getTimezoneOffset() / 60;
-                return `UTC${off >= 0 ? '+' : ''}${off}`;
-            }
+            try { return new Intl.DateTimeFormat('en', { timeZone: tz, timeZoneName: 'shortOffset' }).formatToParts(date).find(x => x.type === 'timeZoneName')?.value || ''; }
+            catch { const off = -date.getTimezoneOffset()/60; return `UTC${off>=0?'+':''}${off}`; }
         }
 
         function hijriDateStr(d) {
             d = d || new Date();
             const day = d.getDate(), mo = d.getMonth() + 1, yr = d.getFullYear();
-            let jd = Math.floor((1461*(yr+4800+Math.floor((mo-14)/12)))/4)
-                   + Math.floor((367*(mo-2-12*Math.floor((mo-14)/12)))/12)
-                   - Math.floor((3*Math.floor((yr+4900+Math.floor((mo-14)/12))/100))/4)
-                   + day - 32075;
+            let jd = Math.floor((1461*(yr+4800+Math.floor((mo-14)/12)))/4) + Math.floor((367*(mo-2-12*Math.floor((mo-14)/12)))/12) - Math.floor((3*Math.floor((yr+4900+Math.floor((mo-14)/12))/100))/4) + day - 32075;
             let l = jd - 1948440 + 10632;
             const n = Math.floor((l-1)/10631);
             l = l - 10631*n + 354;
-            const j = Math.floor((10985-l)/5316)*Math.floor((50*l)/17719)
-                    + Math.floor(l/5670)*Math.floor((43*l)/15238);
-            l = l - Math.floor((30-j)/15)*Math.floor((17719*j)/50)
-                  - Math.floor(j/16)*Math.floor((15238*j)/43) + 29;
+            const j = Math.floor((10985-l)/5316)*Math.floor((50*l)/17719) + Math.floor(l/5670)*Math.floor((43*l)/15238);
+            l = l - Math.floor((30-j)/15)*Math.floor((17719*j)/50) - Math.floor(j/16)*Math.floor((15238*j)/43) + 29;
             const hm = Math.floor((24*l)/709);
             const hd = l - Math.floor((709*hm)/24);
             const hy = 30*n + j - 30;
-            const MONTHS = ['Muharram','Safar','Rabiʻ I','Rabiʻ II','Jumada I','Jumada II',
-                            'Rajab','Shaʻban','Ramadan','Shawwal','Dhuʻl-Qiʻdah','Dhuʻl-Hijjah'];
+            const MONTHS = ['Muharram','Safar','Rabiʻ I','Rabiʻ II','Jumada I','Jumada II','Rajab','Shaʻban','Ramadan','Shawwal','Dhuʻl-Qiʻdah','Dhuʻl-Hijjah'];
             return `${hd} ${MONTHS[(hm-1)%12]} ${hy}`;
         }
 
         const $ = id => document.getElementById(id);
-        const cityInput    = $('cityInput');
-        const searchBtn    = $('searchBtn');
-        const methodSelect = $('methodSelect');
-        const mapLatLngEl  = $('mapLatLng');
-        const errorEl      = $('errorMsg');
+        const cityInput = $('cityInput'), searchBtn = $('searchBtn'), methodSelect = $('methodSelect'), mapLatLngEl = $('mapLatLng'), errorEl = $('errorMsg');
 
         function refreshTimes() {
             try {
-                const now    = new Date();
-                const tz     = locationTimezone;
+                const now = new Date();
+                const tz = locationTimezone;
                 const coords = new adhan.Coordinates(lat, lng);
                 const params = getCalcParams(methodSelect.value);
-
                 const locDateStr = now.toLocaleDateString('en-CA', { timeZone: tz });
                 const [ly, lm, ld] = locDateStr.split('-').map(Number);
                 const calcDate = new Date(ly, lm - 1, ld, 12, 0, 0);
-
                 const pt = new adhan.PrayerTimes(coords, calcDate, params);
 
-                $('fajr').textContent    = formatInTz(pt.fajr,    tz);
+                $('fajr').textContent = formatInTz(pt.fajr, tz);
                 $('sunrise').textContent = formatInTz(pt.sunrise, tz);
-                $('dhuhr').textContent   = formatInTz(pt.dhuhr,   tz);
-                $('asr').textContent     = formatInTz(pt.asr,     tz);
+                $('dhuhr').textContent = formatInTz(pt.dhuhr, tz);
+                $('asr').textContent = formatInTz(pt.asr, tz);
                 $('maghrib').textContent = formatInTz(pt.maghrib, tz);
-                $('isha').textContent    = formatInTz(pt.isha,    tz);
+                $('isha').textContent = formatInTz(pt.isha, tz);
 
-                const locDate = now.toLocaleDateString('en-US', {
-                    timeZone: tz,
-                    month: 'short',
-                    day: 'numeric',
-                    year: 'numeric'
-                });
-
-                $('hijriDate').textContent  = hijriDateStr(now);
-                $('hijriLabel').textContent = 'Hijri';
+                const locDate = now.toLocaleDateString('en-US', { timeZone: tz, month: 'short', day: 'numeric', year: 'numeric' });
+                $('hijriDate').textContent = hijriDateStr(now);
                 $('currentDate').textContent = locDate;
-                $('tzOffset').textContent   = tzLabel(tz, now);
-
+                $('tzOffset').textContent = tzLabel(tz, now);
                 errorEl.textContent = '';
-            } catch (e) {
-                errorEl.textContent = 'calculation error';
-                console.error(e);
-            }
+            } catch (e) { errorEl.textContent = 'calculation error'; }
         }
 
         async function onLocationChange(newLat, newLng, knownTz) {
             lat = newLat; lng = newLng;
-            const latDir = lat >= 0 ? 'N' : 'S';
-            const lngDir = lng >= 0 ? 'E' : 'W';
-            mapLatLngEl.textContent =
-                `${Math.abs(lat).toFixed(2)}°${latDir} ${Math.abs(lng).toFixed(2)}°${lngDir}`;
-
-            ['fajr','sunrise','dhuhr','asr','maghrib','isha'].forEach(id => {
-                $(id).textContent = '—:—';
-            });
-
+            const latDir = lat >= 0 ? 'N' : 'S', lngDir = lng >= 0 ? 'E' : 'W';
+            mapLatLngEl.textContent = `${Math.abs(lat).toFixed(2)}°${latDir} ${Math.abs(lng).toFixed(2)}°${lngDir}`;
+            ['fajr','sunrise','dhuhr','asr','maghrib','isha'].forEach(id => $(id).textContent = '—:—');
             locationTimezone = knownTz || await fetchTimezone(lat, lng);
             refreshTimes();
         }
 
         async function fetchCityName(la, lo) {
             try {
-                const res  = await fetch(
-                    `https://nominatim.openstreetmap.org/reverse?format=json&lat=${la}&lon=${lo}&zoom=10`,
-                    { signal: AbortSignal.timeout(5000) }
-                );
+                const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${la}&lon=${lo}&zoom=10`, { signal: AbortSignal.timeout(5000) });
                 const data = await res.json();
                 const addr = data.address || {};
-                cityInput.value = addr.city || addr.town || addr.village || addr.hamlet
-                                  || data.display_name.split(',')[0]
-                                  || `${la.toFixed(2)}°, ${lo.toFixed(2)}°`;
-            } catch {
-                cityInput.value = `${la.toFixed(2)}°, ${lo.toFixed(2)}°`;
-            }
+                cityInput.value = addr.city || addr.town || addr.village || data.display_name?.split(',')[0] || `${la.toFixed(2)}°, ${lo.toFixed(2)}°`;
+            } catch { cityInput.value = `${la.toFixed(2)}°, ${lo.toFixed(2)}°`; }
         }
 
         async function searchCity(query) {
             if (!query) return;
             errorEl.textContent = '';
             try {
-                const res  = await fetch(
-                    `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1`,
-                    { signal: AbortSignal.timeout(6000) }
-                );
+                const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1`, { signal: AbortSignal.timeout(6000) });
                 const data = await res.json();
-                if (data && data[0]) {
-                    const la = parseFloat(data[0].lat);
-                    const lo = parseFloat(data[0].lon);
+                if (data?.[0]) {
+                    const la = parseFloat(data[0].lat), lo = parseFloat(data[0].lon);
                     cityInput.value = data[0].display_name.split(',')[0];
                     map.setView([la, lo], 8);
                     marker.setLatLng([la, lo]);
                     await onLocationChange(la, lo, null);
-                } else {
-                    errorEl.textContent = 'city not found';
-                }
-            } catch {
-                errorEl.textContent = 'geocoding failed';
-            }
+                } else errorEl.textContent = 'city not found';
+            } catch { errorEl.textContent = 'geocoding failed'; }
         }
 
         async function initUserLocation() {
             try {
-                const res  = await fetch('https://ipapi.co/json/', { signal: AbortSignal.timeout(5000) });
+                const res = await fetch('https://ipapi.co/json/', { signal: AbortSignal.timeout(5000) });
                 const data = await res.json();
-                if (data && data.latitude) {
-                    const la = parseFloat(data.latitude);
-                    const lo = parseFloat(data.longitude);
-                    const tz = data.timezone || null;
+                if (data?.latitude) {
+                    const la = parseFloat(data.latitude), lo = parseFloat(data.longitude);
                     map.setView([la, lo], 6);
                     marker.setLatLng([la, lo]);
                     await fetchCityName(la, lo);
-                    await onLocationChange(la, lo, tz);
+                    await onLocationChange(la, lo, data.timezone || null);
                     return;
                 }
             } catch {}
@@ -556,30 +562,43 @@
 
         function initMap() {
             map = L.map('map', { zoomControl: false }).setView([lat, lng], 5);
-            L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-                attribution: '© OpenStreetMap'
-            }).addTo(map);
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', { attribution: '© OpenStreetMap' }).addTo(map);
             marker = L.marker([lat, lng], { draggable: true }).addTo(map);
 
-            marker.on('dragend', async e => {
+            marker.on('dragend', async (e) => {
                 const p = e.target.getLatLng();
                 await fetchCityName(p.lat, p.lng);
                 await onLocationChange(p.lat, p.lng, null);
             });
 
-            map.on('click', async e => {
+            map.on('click', async (e) => {
                 marker.setLatLng(e.latlng);
                 await fetchCityName(e.latlng.lat, e.latlng.lng);
                 await onLocationChange(e.latlng.lat, e.latlng.lng, null);
             });
 
             initUserLocation();
+
+            // ------------------------------------------------------------------
+            // 3. add BIGGER custom ring marker at Mecca – now clearly visible
+            //    canvas 64px, icon size 52px (up from 36px)
+            // ------------------------------------------------------------------
+            const ringCanvas = generateRingIconCanvas(64); // high-res 64px canvas
+            const ringIcon = L.icon({
+                iconUrl: ringCanvas.toDataURL('image/png'),
+                iconSize: [52, 52],      // MUCH BIGGER – now 52px (was 36)
+                iconAnchor: [26, 26],     // center adjusted
+                popupAnchor: [0, -26]
+            });
+            L.marker([21.4225, 39.8262], { icon: ringIcon, title: 'Kaaba · BIGGER opt7#3 brass' }).addTo(map)
+                .bindPopup('⭐ BIGGER ring: opt7 #3 (brighter brass, locked size 0.95) · 52px');
+
+            // also move the default draggable marker behind? No, keep separate; user understands
         }
 
-        searchBtn.addEventListener('click',  () => searchCity(cityInput.value.trim()));
+        searchBtn.addEventListener('click', () => searchCity(cityInput.value.trim()));
         cityInput.addEventListener('keypress', e => { if (e.key === 'Enter') searchCity(cityInput.value.trim()); });
         methodSelect.addEventListener('change', refreshTimes);
-
         setInterval(refreshTimes, 60000);
         window.addEventListener('load', initMap);
     })();
