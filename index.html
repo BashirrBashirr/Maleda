@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>salaat · map — custom ring marker (opt7 #3) · BIGGER visible</title>
+    <title>salaat · map — custom ring + satellite · zoom</title>
     <!-- Leaflet & fonts -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -90,7 +90,7 @@
         #map {
             width: 100%;
             height: 100%;
-            background: #e1e8ed;
+            background: #cad2d9;  /* fallback, no white lines (soft grey) */
         }
         .map-overlay {
             position: absolute;
@@ -107,10 +107,87 @@
             display: flex;
             gap: 12px;
             font-weight: 480;
+            z-index: 1000; /* keep above map */
         }
         .map-overlay span {
             font-family: 'SF Mono', monospace;
             font-weight: 500;
+        }
+
+        /* --- minimalist zoom buttons (cozy with palette) --- */
+        .custom-zoom-controls {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            z-index: 1000;
+        }
+        .zoom-btn {
+            width: 44px;
+            height: 44px;
+            background: white;
+            border: 1px solid #d0dae3;
+            border-radius: 40px;
+            box-shadow: 0 4px 12px rgba(0,20,30,0.08);
+            font-size: 1.8rem;
+            font-weight: 340;
+            color: #1d5366;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.1s ease;
+            backdrop-filter: blur(4px);
+            background: rgba(255, 255, 255, 0.85);
+            line-height: 1;
+        }
+        .zoom-btn:hover {
+            background: #ffffff;
+            border-color: #a0b7c7;
+            box-shadow: 0 6px 14px rgba(21, 70, 90, 0.12);
+            color: #0b3a4a;
+        }
+        /* satellite toggle – matches method selector style but as button */
+        .layer-toggle {
+            position: absolute;
+            top: 20px;
+            left: 24px;
+            background: #ffffffdd;
+            backdrop-filter: blur(8px);
+            border: 1px solid #d0dae3;
+            border-radius: 40px;
+            padding: 0.3rem;
+            display: flex;
+            gap: 4px;
+            z-index: 1000;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.04);
+        }
+        .layer-btn {
+            background: transparent;
+            border: none;
+            border-radius: 30px;
+            padding: 0.45rem 1.2rem;
+            font-size: 0.85rem;
+            font-weight: 520;
+            color: #124a5e;
+            cursor: pointer;
+            transition: 0.1s;
+            white-space: nowrap;
+        }
+        .layer-btn.active {
+            background: white;
+            border: 1px solid #c4d3df;
+            box-shadow: 0 2px 6px rgba(95, 135, 155, 0.1);
+            color: #04303e;
+            font-weight: 560;
+        }
+        .layer-btn:first-child.active {
+            background: white;
+        }
+        .layer-btn:last-child.active {
+            background: white;
         }
 
         .times-panel {
@@ -248,6 +325,16 @@
     <div class="main">
         <div class="map-panel">
             <div id="map"></div>
+            <!-- Satellite / street toggle -->
+            <div class="layer-toggle" id="layerToggle">
+                <button class="layer-btn active" id="streetBtn">Street</button>
+                <button class="layer-btn" id="satelliteBtn">Satellite</button>
+            </div>
+            <!-- custom zoom buttons -->
+            <div class="custom-zoom-controls">
+                <button class="zoom-btn" id="zoomInBtn">+</button>
+                <button class="zoom-btn" id="zoomOutBtn">−</button>
+            </div>
             <div class="map-overlay">
                 <span>📍</span>
                 <span id="mapLatLng">--°N --°E</span>
@@ -291,14 +378,10 @@
     (function() {
         // ------------------------------------------------------------------
         // 1. render EXACT Kaaba ring (opt7 #3, brighter brass) – LARGER VISIBLE
-        //    Kept exact 3d proportions but output canvas 64px, icon size 52px (much bigger)
         // ------------------------------------------------------------------
         function generateRingIconCanvas(size = 64) {
-            // exact kaaba & door dimensions (same as original)
             const W = 3.5, H = 3.0, D = 3.2, centerY = H/2;
             const STONE_POS = { x: -1.68, y: 0.85, z: D/2 - 0.30 };
-
-            // base config (identical lighting/material from replacement)
             const BASE_CONFIG = {
                 ambient: 0.25, lightColor: 0xbbccee, lightIntensity: 1.0,
                 lightX: -3, lightY: 5, lightZ: 9, fill: true, backLight: true,
@@ -307,8 +390,6 @@
                 goldRoughness: 0.3, goldMetalness: 0.7, edges: true
             };
             const DOOR_9 = { width: 0.61, height: 1.41, color: 0x785a32 };
-
-            // ----- LOCKED SIZE (opt7 #3 : factor 0.95 from original opt7) -----
             const LOCKED_SIZE = {
                 radius: 0.44 * 0.95,        // 0.418
                 tube: 0.13 * 0.95,           // 0.1235
@@ -318,18 +399,15 @@
                 rotationY: 0.81,
                 rotationX: 0.34,
                 double: true,
-                yPos: 0.415                     // fixed Y position
+                yPos: 0.415
             };
-
-            // ---- SINGLE COLOR VARIATION: option 7 (light brass, brighter) ----
             const selectedOption = {
                 color: 0xf0daa8,        // light brass
-                emissive: 0x5e4a2a,      // warm emissive 
+                emissive: 0x5e4a2a,
                 roughness: 0.27,
                 metalness: 0.82
             };
 
-            // setup canvas & scene
             const canvas = document.createElement('canvas');
             canvas.width = size;
             canvas.height = size;
@@ -342,7 +420,6 @@
             renderer.setClearColor(0x000000, 0);
             renderer.setPixelRatio(window.devicePixelRatio);
 
-            // lighting
             scene.add(new THREE.AmbientLight(0xffffff, BASE_CONFIG.ambient));
             const mainLight = new THREE.DirectionalLight(BASE_CONFIG.lightColor, BASE_CONFIG.lightIntensity);
             mainLight.position.set(BASE_CONFIG.lightX, BASE_CONFIG.lightY, BASE_CONFIG.lightZ);
@@ -358,7 +435,6 @@
                 scene.add(back);
             }
 
-            // Kaaba cube
             const cubeMat = new THREE.MeshStandardMaterial({ color: BASE_CONFIG.kaabaColor, roughness: BASE_CONFIG.roughness, metalness: BASE_CONFIG.metalness });
             const kaaba = new THREE.Mesh(new THREE.BoxGeometry(W, H, D), cubeMat);
             kaaba.position.y = centerY;
@@ -371,19 +447,16 @@
                 scene.add(line);
             }
 
-            // gold belt
             const goldMat = new THREE.MeshStandardMaterial({ color: BASE_CONFIG.goldColor, emissive: BASE_CONFIG.goldEmissive, roughness: BASE_CONFIG.goldRoughness, metalness: BASE_CONFIG.goldMetalness });
             const belt = new THREE.Mesh(new THREE.BoxGeometry(W + 0.15, 0.4, D + 0.15), goldMat);
             belt.position.y = 2.0;
             scene.add(belt);
 
-            // door 9
             const doorMat = new THREE.MeshStandardMaterial({ color: DOOR_9.color, roughness: 0.5, metalness: 0.1 });
             const door = new THREE.Mesh(new THREE.BoxGeometry(DOOR_9.width, DOOR_9.height, 0.12), doorMat);
             door.position.set(-0.5, 0.3 + DOOR_9.height/2, D/2 + 0.10);
             scene.add(door);
 
-            // black stone
             const stoneGeo = new THREE.SphereGeometry(0.32, 36);
             const stoneMat = new THREE.MeshStandardMaterial({ color: 0x1a1a1a, roughness: 0.25, metalness: 0.15, emissive: 0x050505 });
             const stone = new THREE.Mesh(stoneGeo, stoneMat);
@@ -391,7 +464,6 @@
             stone.position.set(STONE_POS.x, STONE_POS.y, STONE_POS.z);
             scene.add(stone);
 
-            // ring material (brass, brighter)
             const ringMat = new THREE.MeshStandardMaterial({
                 color: selectedOption.color,
                 emissive: selectedOption.emissive,
@@ -400,7 +472,6 @@
                 emissiveIntensity: 0.2
             });
 
-            // primary torus (smaller locked size)
             const torusGeo = new THREE.TorusGeometry(LOCKED_SIZE.radius, LOCKED_SIZE.tube, 32, 64, Math.PI * 2);
             const torus = new THREE.Mesh(torusGeo, ringMat);
             torus.position.set(STONE_POS.x, LOCKED_SIZE.yPos, STONE_POS.z);
@@ -409,7 +480,6 @@
             torus.scale.set(LOCKED_SIZE.scaleX, LOCKED_SIZE.scaleY, LOCKED_SIZE.scaleZ);
             scene.add(torus);
 
-            // secondary (inner) ring
             const torus2Geo = new THREE.TorusGeometry(LOCKED_SIZE.radius * 0.96, LOCKED_SIZE.tube * 0.8, 32, 64);
             const torus2 = new THREE.Mesh(torus2Geo, ringMat);
             torus2.position.copy(torus.position);
@@ -422,11 +492,12 @@
         }
 
         // ------------------------------------------------------------------
-        // 2. original prayer times code + custom marker at Mecca
+        // 2. original prayer times + custom marker + layer/zoom controls
         // ------------------------------------------------------------------
         let lat = 21.4225, lng = 39.8262;
         let locationTimezone = 'Asia/Riyadh';
-        let map, marker;
+        let map, marker, ringMarker;
+        let streetLayer, satelliteLayer;
 
         function getCalcParams(name) {
             switch (name) {
@@ -557,7 +628,6 @@
                     return;
                 }
             } catch {}
-            // Fallback to Mecca if user location fails
             map.setView([21.4225, 39.8262], 6);
             marker.setLatLng([21.4225, 39.8262]);
             await fetchCityName(21.4225, 39.8262);
@@ -565,16 +635,33 @@
         }
 
         function initMap() {
-            // Initialize map with OpenStreetMap tiles (exact same as example)
-            map = L.map('map', { zoomControl: false }).setView([0, 0], 2); // Temporary view, will be updated
-            
-            // EXACT TILE LAYER from your example
-            L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: '© OpenStreetMap'
+            map = L.map('map', { 
+                zoomControl: false,   // we add custom
+                fadeAnimation: false,  // reduce white flicker
+                zoomAnimation: false   // faster, avoid white tiles
+            }).setView([0, 0], 2);
+
+            // --- fast street tile (same as before) ---
+            streetLayer = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap',
+                detectRetina: true,
+                keepBuffer: 4,
+                updateWhenIdle: false,
+                updateWhenZooming: true,
+                zIndex: 1
             }).addTo(map);
 
-            // --- HIGHEST QUALITY RED MARKER (exact same shape, now red) ---
-            // Using 2x resolution for retina displays and better quality
+            // --- satellite (ESRI world imagery — sharp, professional) ---
+            satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+                attribution: 'Tiles © Esri — Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community',
+                maxZoom: 19,
+                keepBuffer: 4,
+                updateWhenIdle: false,
+                updateWhenZooming: true,
+                zIndex: 1
+            });
+
+            // red draggable marker
             const redIcon = L.icon({
                 iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
                 shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
@@ -586,26 +673,18 @@
             });
             
             marker = L.marker([0, 0], { draggable: true, icon: redIcon }).addTo(map);
-
             marker.on('dragend', async (e) => {
                 const p = e.target.getLatLng();
                 await fetchCityName(p.lat, p.lng);
                 await onLocationChange(p.lat, p.lng, null);
             });
-
             map.on('click', async (e) => {
                 marker.setLatLng(e.latlng);
                 await fetchCityName(e.latlng.lat, e.latlng.lng);
                 await onLocationChange(e.latlng.lat, e.latlng.lng, null);
             });
 
-            // Get user location on start
-            initUserLocation();
-
-            // ------------------------------------------------------------------
-            // 3. add BIGGER custom ring marker at Mecca – now clearly visible
-            //    canvas 64px, icon size 52px (up from 36px)
-            // ------------------------------------------------------------------
+            // custom ring marker (Kaaba)
             const ringCanvas = generateRingIconCanvas(64);
             const ringIcon = L.icon({
                 iconUrl: ringCanvas.toDataURL('image/png'),
@@ -613,8 +692,30 @@
                 iconAnchor: [26, 26],
                 popupAnchor: [0, -26]
             });
-            L.marker([21.4225, 39.8262], { icon: ringIcon, title: 'Kaaba · BIGGER opt7#3 brass' }).addTo(map)
+            ringMarker = L.marker([21.4225, 39.8262], { icon: ringIcon, title: 'Kaaba · BIGGER opt7#3 brass' }).addTo(map)
                 .bindPopup('Al-Kaʿbah al-Musharrafa');
+
+            // layer toggle logic
+            const streetBtn = $('streetBtn');
+            const satelliteBtn = $('satelliteBtn');
+            streetBtn.addEventListener('click', () => {
+                if (map.hasLayer(satelliteLayer)) map.removeLayer(satelliteLayer);
+                if (!map.hasLayer(streetLayer)) streetLayer.addTo(map);
+                streetBtn.classList.add('active');
+                satelliteBtn.classList.remove('active');
+            });
+            satelliteBtn.addEventListener('click', () => {
+                if (map.hasLayer(streetLayer)) map.removeLayer(streetLayer);
+                if (!map.hasLayer(satelliteLayer)) satelliteLayer.addTo(map);
+                satelliteBtn.classList.add('active');
+                streetBtn.classList.remove('active');
+            });
+
+            // custom zoom buttons
+            $('zoomInBtn').addEventListener('click', () => map.zoomIn());
+            $('zoomOutBtn').addEventListener('click', () => map.zoomOut());
+
+            initUserLocation();
         }
 
         searchBtn.addEventListener('click', () => searchCity(cityInput.value.trim()));
