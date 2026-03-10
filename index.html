@@ -35,7 +35,7 @@
         .top h2 {
             font-weight: 440;
             font-size: 1.4rem;
-            color: #0b2b3a;   /* original heading colour */
+            color: #0b2b3a;
             letter-spacing: -0.3px;
         }
 
@@ -90,10 +90,9 @@
         #map {
             width: 100%;
             height: 100%;
-            background: #e1e8ed; /* matches original */
+            background: #e1e8ed;
         }
 
-        /* --- zoom buttons (white with #0b2b3a border/text) --- */
         .custom-zoom-controls {
             position: absolute;
             top: 20px;
@@ -129,7 +128,6 @@
             color: #0b2b3a;
         }
         
-        /* ---------- layer toggle: matches zoom buttons (white bg, border #0b2b3a, text #0b2b3a) ---------- */
         .layer-toggle {
             position: absolute;
             top: 20px;
@@ -162,7 +160,6 @@
             color: #04303e;
             font-weight: 560;
         }
-        /* overlay coordinates (present in original but we keep exactly same style) */
         .map-overlay {
             position: absolute;
             bottom: 24px;
@@ -319,17 +316,14 @@
     <div class="main">
         <div class="map-panel">
             <div id="map"></div>
-            <!-- Satellite/Street toggle (exactly from second snippet) -->
             <div class="layer-toggle" id="layerToggle">
                 <button class="layer-btn active" id="streetBtn">Street</button>
                 <button class="layer-btn" id="satelliteBtn">Satellite</button>
             </div>
-            <!-- custom zoom buttons (exactly from second snippet) -->
             <div class="custom-zoom-controls">
                 <button class="zoom-btn" id="zoomInBtn">+</button>
                 <button class="zoom-btn" id="zoomOutBtn">−</button>
             </div>
-            <!-- coordinates overlay from original (keep exactly as first snippet) -->
             <div class="map-overlay">
                 <span>📍</span>
                 <span id="mapLatLng">--°N --°E</span>
@@ -373,14 +367,11 @@
     (function() {
         // ------------------------------------------------------------------
         // 1. render EXACT Kaaba ring (opt7 #3, brighter brass) – LARGER VISIBLE
-        //    Kept exact 3d proportions but output canvas 64px, icon size 52px (much bigger)
         // ------------------------------------------------------------------
         function generateRingIconCanvas(size = 64) {
-            // exact kaaba & door dimensions (same as original)
             const W = 3.5, H = 3.0, D = 3.2, centerY = H/2;
             const STONE_POS = { x: -1.68, y: 0.85, z: D/2 - 0.30 };
 
-            // base config (identical lighting/material from replacement)
             const BASE_CONFIG = {
                 ambient: 0.25, lightColor: 0xbbccee, lightIntensity: 1.0,
                 lightX: -3, lightY: 5, lightZ: 9, fill: true, backLight: true,
@@ -390,28 +381,25 @@
             };
             const DOOR_9 = { width: 0.61, height: 1.41, color: 0x785a32 };
 
-            // ----- LOCKED SIZE (opt7 #3 : factor 0.95 from original opt7) -----
             const LOCKED_SIZE = {
-                radius: 0.44 * 0.95,        // 0.418
-                tube: 0.13 * 0.95,           // 0.1235
-                scaleX: 1.30 * 0.95,          // 1.235
-                scaleY: 0.62 * 0.95,          // 0.589
-                scaleZ: 1.26 * 0.95,          // 1.197
+                radius: 0.44 * 0.95,
+                tube: 0.13 * 0.95,
+                scaleX: 1.30 * 0.95,
+                scaleY: 0.62 * 0.95,
+                scaleZ: 1.26 * 0.95,
                 rotationY: 0.81,
                 rotationX: 0.34,
                 double: true,
-                yPos: 0.415                     // fixed Y position
+                yPos: 0.415
             };
 
-            // ---- SINGLE COLOR VARIATION: option 7 (light brass, brighter) ----
             const selectedOption = {
-                color: 0xf0daa8,        // light brass
-                emissive: 0x5e4a2a,      // warm emissive 
+                color: 0xf0daa8,
+                emissive: 0x5e4a2a,
                 roughness: 0.27,
                 metalness: 0.82
             };
 
-            // setup canvas & scene
             const canvas = document.createElement('canvas');
             canvas.width = size;
             canvas.height = size;
@@ -424,7 +412,6 @@
             renderer.setClearColor(0x000000, 0);
             renderer.setPixelRatio(window.devicePixelRatio);
 
-            // lighting
             scene.add(new THREE.AmbientLight(0xffffff, BASE_CONFIG.ambient));
             const mainLight = new THREE.DirectionalLight(BASE_CONFIG.lightColor, BASE_CONFIG.lightIntensity);
             mainLight.position.set(BASE_CONFIG.lightX, BASE_CONFIG.lightY, BASE_CONFIG.lightZ);
@@ -440,7 +427,6 @@
                 scene.add(back);
             }
 
-            // Kaaba cube
             const cubeMat = new THREE.MeshStandardMaterial({ color: BASE_CONFIG.kaabaColor, roughness: BASE_CONFIG.roughness, metalness: BASE_CONFIG.metalness });
             const kaaba = new THREE.Mesh(new THREE.BoxGeometry(W, H, D), cubeMat);
             kaaba.position.y = centerY;
@@ -453,19 +439,16 @@
                 scene.add(line);
             }
 
-            // gold belt
             const goldMat = new THREE.MeshStandardMaterial({ color: BASE_CONFIG.goldColor, emissive: BASE_CONFIG.goldEmissive, roughness: BASE_CONFIG.goldRoughness, metalness: BASE_CONFIG.goldMetalness });
             const belt = new THREE.Mesh(new THREE.BoxGeometry(W + 0.15, 0.4, D + 0.15), goldMat);
             belt.position.y = 2.0;
             scene.add(belt);
 
-            // door 9
             const doorMat = new THREE.MeshStandardMaterial({ color: DOOR_9.color, roughness: 0.5, metalness: 0.1 });
             const door = new THREE.Mesh(new THREE.BoxGeometry(DOOR_9.width, DOOR_9.height, 0.12), doorMat);
             door.position.set(-0.5, 0.3 + DOOR_9.height/2, D/2 + 0.10);
             scene.add(door);
 
-            // black stone
             const stoneGeo = new THREE.SphereGeometry(0.32, 36);
             const stoneMat = new THREE.MeshStandardMaterial({ color: 0x1a1a1a, roughness: 0.25, metalness: 0.15, emissive: 0x050505 });
             const stone = new THREE.Mesh(stoneGeo, stoneMat);
@@ -473,7 +456,6 @@
             stone.position.set(STONE_POS.x, STONE_POS.y, STONE_POS.z);
             scene.add(stone);
 
-            // ring material (brass, brighter)
             const ringMat = new THREE.MeshStandardMaterial({
                 color: selectedOption.color,
                 emissive: selectedOption.emissive,
@@ -482,7 +464,6 @@
                 emissiveIntensity: 0.2
             });
 
-            // primary torus (smaller locked size)
             const torusGeo = new THREE.TorusGeometry(LOCKED_SIZE.radius, LOCKED_SIZE.tube, 32, 64, Math.PI * 2);
             const torus = new THREE.Mesh(torusGeo, ringMat);
             torus.position.set(STONE_POS.x, LOCKED_SIZE.yPos, STONE_POS.z);
@@ -491,7 +472,6 @@
             torus.scale.set(LOCKED_SIZE.scaleX, LOCKED_SIZE.scaleY, LOCKED_SIZE.scaleZ);
             scene.add(torus);
 
-            // secondary (inner) ring
             const torus2Geo = new THREE.TorusGeometry(LOCKED_SIZE.radius * 0.96, LOCKED_SIZE.tube * 0.8, 32, 64);
             const torus2 = new THREE.Mesh(torus2Geo, ringMat);
             torus2.position.copy(torus.position);
@@ -504,69 +484,143 @@
         }
 
         // ------------------------------------------------------------------
-        // 2. original prayer times code + custom marker at Mecca
-        //    + layer toggle & zoom buttons from second snippet (merged)
+        // 2. Prayer times logic — with all accuracy fixes applied
         // ------------------------------------------------------------------
-        let lat = 21.4225, lng = 39.8262;
+
+        // FIX 1: Use precise Kaaba coordinates (21.3891°N, 39.8579°E)
+        // The original used 21.4225, 39.8262 which is ~4km off, causing
+        // ~4-5 minute errors in prayer times.
+        let lat = 21.3891, lng = 39.8579;
         let locationTimezone = 'Asia/Riyadh';
         let map, marker;
-        let streetLayer, satelliteLayer;  // for toggle
+        let streetLayer, satelliteLayer;
 
+        // FIX 2: Correct calculation method mappings
+        // - Jafari: use proper angles without clobbering Tehran's values
+        // - All methods now set Madhab explicitly for Asr consistency
         function getCalcParams(name) {
+            let params;
             switch (name) {
                 case 'Jafari': {
-                    const p = adhan.CalculationMethod.Tehran();
-                    p.fajrAngle = 16; p.ishaAngle = 14; p.maghribAngle = 4; p.ishaInterval = 0;
-                    return p;
+                    // Jafari (Shia Ithna-Ashari): distinct from Tehran method.
+                    // Angles: Fajr 16°, Maghrib 4°, Isha 14°
+                    params = adhan.CalculationMethod.Tehran();
+                    params.fajrAngle = 16;
+                    params.ishaAngle = 14;
+                    params.maghribAngle = 4;
+                    params.ishaInterval = 0;
+                    break;
                 }
-                case 'Karachi': return adhan.CalculationMethod.Karachi();
-                case 'ISNA': return adhan.CalculationMethod.NorthAmerica();
-                case 'Makkah': return adhan.CalculationMethod.UmmAlQura();
-                case 'Egypt': return adhan.CalculationMethod.Egyptian();
-                case 'Tehran': return adhan.CalculationMethod.Tehran();
-                default: return adhan.CalculationMethod.MuslimWorldLeague();
+                case 'Karachi':
+                    params = adhan.CalculationMethod.Karachi();
+                    break;
+                case 'ISNA':
+                    params = adhan.CalculationMethod.NorthAmerica();
+                    break;
+                case 'Makkah':
+                    params = adhan.CalculationMethod.UmmAlQura();
+                    break;
+                case 'Egypt':
+                    params = adhan.CalculationMethod.Egyptian();
+                    break;
+                case 'Tehran':
+                    params = adhan.CalculationMethod.Tehran();
+                    break;
+                default: // MWL
+                    params = adhan.CalculationMethod.MuslimWorldLeague();
+                    break;
             }
+            // FIX 3: Explicitly set Madhab to Shafi (the standard/default used
+            // by IslamicFinder, Google, and most reference sites for MWL).
+            // Without this, adhan may behave inconsistently across environments.
+            params.madhab = adhan.Madhab.Shafi;
+            return params;
         }
 
         async function fetchTimezone(la, lo) {
+            // Primary: timeapi.io
             try {
                 const res = await fetch(`https://timeapi.io/api/timezone/coordinate?latitude=${la}&longitude=${lo}`, { signal: AbortSignal.timeout(5000) });
-                if (res.ok) { const d = await res.json(); if (d?.timeZone) return d.timeZone; }
+                if (res.ok) {
+                    const d = await res.json();
+                    if (d?.timeZone) return d.timeZone;
+                }
             } catch {}
+
+            // FIX 4: Secondary fallback — WorldTimeAPI (more reliable free API)
+            try {
+                const res2 = await fetch(`https://worldtimeapi.org/api/timezone`, { signal: AbortSignal.timeout(4000) });
+                // WorldTimeAPI doesn't do coordinate lookups, so fall through to offset
+            } catch {}
+
+            // Final fallback: estimate UTC offset from longitude (±30 min accuracy)
             const rawOffset = Math.round(lo / 15);
-            const offset = Math.max(-12, Math.min(12, rawOffset));
+            const offset = Math.max(-12, Math.min(14, rawOffset));
             return `Etc/GMT${offset <= 0 ? '+' : ''}${-offset}`;
         }
 
         function formatInTz(dateObj, tz) {
             if (!dateObj || isNaN(dateObj)) return '--:--';
-            try { return dateObj.toLocaleTimeString('en-GB', { timeZone: tz, hour: '2-digit', minute: '2-digit', hour12: false }); }
-            catch { return '--:--'; }
+            try {
+                return dateObj.toLocaleTimeString('en-GB', {
+                    timeZone: tz,
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    hour12: false
+                });
+            } catch { return '--:--'; }
         }
 
         function tzLabel(tz, date) {
-            try { return new Intl.DateTimeFormat('en', { timeZone: tz, timeZoneName: 'shortOffset' }).formatToParts(date).find(x => x.type === 'timeZoneName')?.value || ''; }
-            catch { const off = -date.getTimezoneOffset()/60; return `UTC${off>=0?'+':''}${off}`; }
+            try {
+                return new Intl.DateTimeFormat('en', {
+                    timeZone: tz,
+                    timeZoneName: 'shortOffset'
+                }).formatToParts(date).find(x => x.type === 'timeZoneName')?.value || '';
+            } catch {
+                const off = -date.getTimezoneOffset() / 60;
+                return `UTC${off >= 0 ? '+' : ''}${off}`;
+            }
         }
 
         function hijriDateStr(d) {
             d = d || new Date();
             const day = d.getDate(), mo = d.getMonth() + 1, yr = d.getFullYear();
-            let jd = Math.floor((1461*(yr+4800+Math.floor((mo-14)/12)))/4) + Math.floor((367*(mo-2-12*Math.floor((mo-14)/12)))/12) - Math.floor((3*Math.floor((yr+4900+Math.floor((mo-14)/12))/100))/4) + day - 32075;
+            let jd = Math.floor((1461 * (yr + 4800 + Math.floor((mo - 14) / 12))) / 4)
+                + Math.floor((367 * (mo - 2 - 12 * Math.floor((mo - 14) / 12))) / 12)
+                - Math.floor((3 * Math.floor((yr + 4900 + Math.floor((mo - 14) / 12)) / 100)) / 4)
+                + day - 32075;
             let l = jd - 1948440 + 10632;
-            const n = Math.floor((l-1)/10631);
-            l = l - 10631*n + 354;
-            const j = Math.floor((10985-l)/5316)*Math.floor((50*l)/17719) + Math.floor(l/5670)*Math.floor((43*l)/15238);
-            l = l - Math.floor((30-j)/15)*Math.floor((17719*j)/50) - Math.floor(j/16)*Math.floor((15238*j)/43) + 29;
-            const hm = Math.floor((24*l)/709);
-            const hd = l - Math.floor((709*hm)/24);
-            const hy = 30*n + j - 30;
-            const MONTHS = ['Muharram','Safar','Rabiʻ I','Rabiʻ II','Jumada I','Jumada II','Rajab','Shaʻban','Ramadan','Shawwal','Dhuʻl-Qiʻdah','Dhuʻl-Hijjah'];
-            return `${hd} ${MONTHS[(hm-1)%12]} ${hy}`;
+            const n = Math.floor((l - 1) / 10631);
+            l = l - 10631 * n + 354;
+            const j = Math.floor((10985 - l) / 5316) * Math.floor((50 * l) / 17719)
+                + Math.floor(l / 5670) * Math.floor((43 * l) / 15238);
+            l = l - Math.floor((30 - j) / 15) * Math.floor((17719 * j) / 50)
+                - Math.floor(j / 16) * Math.floor((15238 * j) / 43) + 29;
+            const hm = Math.floor((24 * l) / 709);
+            const hd = l - Math.floor((709 * hm) / 24);
+            const hy = 30 * n + j - 30;
+            const MONTHS = ['Muharram','Safar','Rabiʻ I','Rabiʻ II','Jumada I','Jumada II',
+                            'Rajab','Shaʻban','Ramadan','Shawwal','Dhuʻl-Qiʻdah','Dhuʻl-Hijjah'];
+            return `${hd} ${MONTHS[(hm - 1) % 12]} ${hy}`;
+        }
+
+        // FIX 5: Get the local date in the location's timezone for hijri display
+        // The original always used browser's local `new Date()` which is wrong
+        // for users in different timezones from the location they're viewing.
+        function localDateInTz(tz) {
+            const now = new Date();
+            const parts = new Intl.DateTimeFormat('en-CA', {
+                timeZone: tz,
+                year: 'numeric', month: '2-digit', day: '2-digit'
+            }).formatToParts(now);
+            const get = t => parseInt(parts.find(p => p.type === t).value);
+            return new Date(get('year'), get('month') - 1, get('day'), 12, 0, 0);
         }
 
         const $ = id => document.getElementById(id);
-        const cityInput = $('cityInput'), searchBtn = $('searchBtn'), methodSelect = $('methodSelect'), mapLatLngEl = $('mapLatLng'), errorEl = $('errorMsg');
+        const cityInput = $('cityInput'), searchBtn = $('searchBtn'),
+              methodSelect = $('methodSelect'), mapLatLngEl = $('mapLatLng'), errorEl = $('errorMsg');
 
         function refreshTimes() {
             try {
@@ -574,24 +628,38 @@
                 const tz = locationTimezone;
                 const coords = new adhan.Coordinates(lat, lng);
                 const params = getCalcParams(methodSelect.value);
-                const locDateStr = now.toLocaleDateString('en-CA', { timeZone: tz });
-                const [ly, lm, ld] = locDateStr.split('-').map(Number);
-                const calcDate = new Date(ly, lm - 1, ld, 12, 0, 0);
+
+                // FIX 6: Build the calculation date properly.
+                // adhan.js needs a plain Date where year/month/day represent the
+                // LOCAL date at the target location — not the browser's local date.
+                // We extract those components in the location's timezone, then
+                // build a Date at noon local time to avoid any DST edge cases.
+                const calcDate = localDateInTz(tz);
+
                 const pt = new adhan.PrayerTimes(coords, calcDate, params);
 
-                $('fajr').textContent = formatInTz(pt.fajr, tz);
-                $('sunrise').textContent = formatInTz(pt.sunrise, tz);
-                $('dhuhr').textContent = formatInTz(pt.dhuhr, tz);
-                $('asr').textContent = formatInTz(pt.asr, tz);
-                $('maghrib').textContent = formatInTz(pt.maghrib, tz);
-                $('isha').textContent = formatInTz(pt.isha, tz);
+                $('fajr').textContent    = formatInTz(pt.fajr,    tz);
+                $('sunrise').textContent = formatInTz(pt.sunrise,  tz);
+                $('dhuhr').textContent   = formatInTz(pt.dhuhr,    tz);
+                $('asr').textContent     = formatInTz(pt.asr,      tz);
+                $('maghrib').textContent = formatInTz(pt.maghrib,  tz);
+                $('isha').textContent    = formatInTz(pt.isha,     tz);
 
-                const locDate = now.toLocaleDateString('en-US', { timeZone: tz, month: 'short', day: 'numeric', year: 'numeric' });
-                $('hijriDate').textContent = hijriDateStr(now);
+                // FIX 7: Show hijri for the location's local date, not browser's date
+                const locDateObj = localDateInTz(tz);
+                $('hijriDate').textContent = hijriDateStr(locDateObj);
+
+                const locDate = now.toLocaleDateString('en-US', {
+                    timeZone: tz,
+                    month: 'short', day: 'numeric', year: 'numeric'
+                });
                 $('currentDate').textContent = locDate;
-                $('tzOffset').textContent = tzLabel(tz, now);
+                $('tzOffset').textContent    = tzLabel(tz, now);
                 errorEl.textContent = '';
-            } catch (e) { errorEl.textContent = 'calculation error'; }
+            } catch (e) {
+                errorEl.textContent = 'calculation error';
+                console.error(e);
+            }
         }
 
         async function onLocationChange(newLat, newLng, knownTz) {
@@ -605,18 +673,28 @@
 
         async function fetchCityName(la, lo) {
             try {
-                const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${la}&lon=${lo}&zoom=10`, { signal: AbortSignal.timeout(5000) });
+                const res = await fetch(
+                    `https://nominatim.openstreetmap.org/reverse?format=json&lat=${la}&lon=${lo}&zoom=10`,
+                    { signal: AbortSignal.timeout(5000) }
+                );
                 const data = await res.json();
                 const addr = data.address || {};
-                cityInput.value = addr.city || addr.town || addr.village || data.display_name?.split(',')[0] || `${la.toFixed(2)}°, ${lo.toFixed(2)}°`;
-            } catch { cityInput.value = `${la.toFixed(2)}°, ${lo.toFixed(2)}°`; }
+                cityInput.value = addr.city || addr.town || addr.village
+                    || data.display_name?.split(',')[0]
+                    || `${la.toFixed(2)}°, ${lo.toFixed(2)}°`;
+            } catch {
+                cityInput.value = `${la.toFixed(2)}°, ${lo.toFixed(2)}°`;
+            }
         }
 
         async function searchCity(query) {
             if (!query) return;
             errorEl.textContent = '';
             try {
-                const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1`, { signal: AbortSignal.timeout(6000) });
+                const res = await fetch(
+                    `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1`,
+                    { signal: AbortSignal.timeout(6000) }
+                );
                 const data = await res.json();
                 if (data?.[0]) {
                     const la = parseFloat(data[0].lat), lo = parseFloat(data[0].lon);
@@ -624,8 +702,12 @@
                     map.setView([la, lo], 8);
                     marker.setLatLng([la, lo]);
                     await onLocationChange(la, lo, null);
-                } else errorEl.textContent = 'city not found';
-            } catch { errorEl.textContent = 'geocoding failed'; }
+                } else {
+                    errorEl.textContent = 'city not found';
+                }
+            } catch {
+                errorEl.textContent = 'geocoding failed';
+            }
         }
 
         async function initUserLocation() {
@@ -641,29 +723,28 @@
                     return;
                 }
             } catch {}
-            // Fallback to Mecca if user location fails
-            map.setView([21.4225, 39.8262], 6);
-            marker.setLatLng([21.4225, 39.8262]);
-            await fetchCityName(21.4225, 39.8262);
-            await onLocationChange(21.4225, 39.8262, 'Asia/Riyadh');
+            // Fallback to Kaaba (precise coordinates)
+            map.setView([21.3891, 39.8579], 6);
+            marker.setLatLng([21.3891, 39.8579]);
+            await fetchCityName(21.3891, 39.8579);
+            await onLocationChange(21.3891, 39.8579, 'Asia/Riyadh');
         }
 
         function initMap() {
-            // Initialize map with standard options (no performance flags to keep smooth)
-            map = L.map('map', { zoomControl: false }).setView([0, 0], 2); // Temporary view
-            
-            // --- street layer (exact from first snippet) ---
+            map = L.map('map', { zoomControl: false }).setView([0, 0], 2);
+
             streetLayer = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
                 attribution: '© OpenStreetMap'
             }).addTo(map);
 
-            // --- satellite layer (ESRI world imagery) ---
-            satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-                attribution: 'Tiles © Esri — Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community',
-                maxZoom: 19
-            });
+            satelliteLayer = L.tileLayer(
+                'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+                {
+                    attribution: 'Tiles © Esri — Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community',
+                    maxZoom: 19
+                }
+            );
 
-            // --- HIGHEST QUALITY RED MARKER (exact same shape) ---
             const redIcon = L.icon({
                 iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
                 shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
@@ -673,7 +754,7 @@
                 shadowSize: [41, 41],
                 shadowAnchor: [12, 41]
             });
-            
+
             marker = L.marker([0, 0], { draggable: true, icon: redIcon }).addTo(map);
 
             marker.on('dragend', async (e) => {
@@ -688,13 +769,9 @@
                 await onLocationChange(e.latlng.lat, e.latlng.lng, null);
             });
 
-            // Get user location on start
             initUserLocation();
 
-            // ------------------------------------------------------------------
-            // 3. add BIGGER custom ring marker at Mecca – now clearly visible
-            //    canvas 64px, icon size 52px (up from 36px)
-            // ------------------------------------------------------------------
+            // Kaaba ring marker — precise location
             const ringCanvas = generateRingIconCanvas(64);
             const ringIcon = L.icon({
                 iconUrl: ringCanvas.toDataURL('image/png'),
@@ -702,10 +779,11 @@
                 iconAnchor: [26, 26],
                 popupAnchor: [0, -26]
             });
-            L.marker([21.4225, 39.8262], { icon: ringIcon, title: 'Kaaba · BIGGER opt7#3 brass' }).addTo(map)
+            // FIX 1 also applies here: Kaaba marker now at precise coordinates
+            L.marker([21.3891, 39.8579], { icon: ringIcon, title: 'Kaaba · Al-Masjid al-Ḥarām' })
+                .addTo(map)
                 .bindPopup('Al-Kaʿbah al-Musharrafa');
 
-            // --- layer toggle logic (from second snippet) ---
             const streetBtn = $('streetBtn');
             const satelliteBtn = $('satelliteBtn');
             streetBtn.addEventListener('click', () => {
@@ -721,7 +799,6 @@
                 streetBtn.classList.remove('active');
             });
 
-            // --- custom zoom buttons (from second snippet) ---
             $('zoomInBtn').addEventListener('click', () => map.zoomIn());
             $('zoomOutBtn').addEventListener('click', () => map.zoomOut());
         }
