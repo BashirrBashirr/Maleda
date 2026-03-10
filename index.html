@@ -293,7 +293,7 @@
         // 1. render EXACT Kaaba ring (opt7 #3, brighter brass) – LARGER VISIBLE
         //    Kept exact 3d proportions but output canvas 64px, icon size 52px (much bigger)
         // ------------------------------------------------------------------
-        function generateRingIconCanvas(size = 64) {  // increased canvas resolution for sharpness
+        function generateRingIconCanvas(size = 64) {
             // exact kaaba & door dimensions (same as original)
             const W = 3.5, H = 3.0, D = 3.2, centerY = H/2;
             const STONE_POS = { x: -1.68, y: 0.85, z: D/2 - 0.30 };
@@ -337,9 +337,10 @@
             const camera = new THREE.PerspectiveCamera(42, 1, 0.1, 100);
             camera.position.set(4.5, 2.7, 6.8);
             camera.lookAt(0, 1.6, 0);
-            const renderer = new THREE.WebGLRenderer({ canvas, alpha: true });
+            const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true, powerPreference: "high-performance" });
             renderer.setSize(size, size);
             renderer.setClearColor(0x000000, 0);
+            renderer.setPixelRatio(window.devicePixelRatio);
 
             // lighting
             scene.add(new THREE.AmbientLight(0xffffff, BASE_CONFIG.ambient));
@@ -396,7 +397,7 @@
                 emissive: selectedOption.emissive,
                 roughness: selectedOption.roughness,
                 metalness: selectedOption.metalness,
-                emissiveIntensity: 0.2   // slight emissive boost for brighter appearance
+                emissiveIntensity: 0.2
             });
 
             // primary torus (smaller locked size)
@@ -556,24 +557,35 @@
                     return;
                 }
             } catch {}
-            await fetchCityName(lat, lng);
-            await onLocationChange(lat, lng, 'Asia/Riyadh');
+            // Fallback to Mecca if user location fails
+            map.setView([21.4225, 39.8262], 6);
+            marker.setLatLng([21.4225, 39.8262]);
+            await fetchCityName(21.4225, 39.8262);
+            await onLocationChange(21.4225, 39.8262, 'Asia/Riyadh');
         }
 
         function initMap() {
-            map = L.map('map', { zoomControl: false }).setView([lat, lng], 5);
-            L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', { attribution: '© OpenStreetMap' }).addTo(map);
+            // Initialize map with OpenStreetMap tiles (exact same as example)
+            map = L.map('map', { zoomControl: false }).setView([0, 0], 2); // Temporary view, will be updated
+            
+            // EXACT TILE LAYER from your example
+            L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            }).addTo(map);
 
-            // --- 🔴 RED DRAGGABLE MARKER (exact same shape, now red) ---
+            // --- HIGHEST QUALITY RED MARKER (exact same shape, now red) ---
+            // Using 2x resolution for retina displays and better quality
             const redIcon = L.icon({
                 iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
                 shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
                 iconSize: [25, 41],
                 iconAnchor: [12, 41],
                 popupAnchor: [1, -34],
-                shadowSize: [41, 41]
+                shadowSize: [41, 41],
+                shadowAnchor: [12, 41]
             });
-            marker = L.marker([lat, lng], { draggable: true, icon: redIcon }).addTo(map);
+            
+            marker = L.marker([0, 0], { draggable: true, icon: redIcon }).addTo(map);
 
             marker.on('dragend', async (e) => {
                 const p = e.target.getLatLng();
@@ -587,17 +599,18 @@
                 await onLocationChange(e.latlng.lat, e.latlng.lng, null);
             });
 
+            // Get user location on start
             initUserLocation();
 
             // ------------------------------------------------------------------
             // 3. add BIGGER custom ring marker at Mecca – now clearly visible
             //    canvas 64px, icon size 52px (up from 36px)
             // ------------------------------------------------------------------
-            const ringCanvas = generateRingIconCanvas(64); // high-res 64px canvas
+            const ringCanvas = generateRingIconCanvas(64);
             const ringIcon = L.icon({
                 iconUrl: ringCanvas.toDataURL('image/png'),
-                iconSize: [52, 52],      // MUCH BIGGER – now 52px (was 36)
-                iconAnchor: [26, 26],     // center adjusted
+                iconSize: [52, 52],
+                iconAnchor: [26, 26],
                 popupAnchor: [0, -26]
             });
             L.marker([21.4225, 39.8262], { icon: ringIcon, title: 'Kaaba · BIGGER opt7#3 brass' }).addTo(map)
