@@ -3,206 +3,270 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>salaat • map — islamic / local times</title>
+    <title>salaat · map — precision prayer times</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <!-- Inter font — clean, modern, widely used in tech -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600&display=swap" rel="stylesheet">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
-            background: #f3f1ec;
-            font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+            background: #f5f7fa;
+            font-family: 'Inter', -apple-system, system-ui, sans-serif;
             height: 100vh;
             display: flex;
             flex-direction: column;
-            color: #1c2b33;
+            color: #1a2e3b;
+            letter-spacing: -0.01em;
         }
+
+        /* --- minimal, high-contrast header --- */
         .top {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 0.75rem 1.5rem;
-            background: #ffffffba;
-            backdrop-filter: blur(4px);
-            border-bottom: 1px solid #d4cdc0;
-            font-weight: 350;
-            letter-spacing: 0.2px;
+            padding: 1rem 2rem;
+            background: #ffffff;
+            border-bottom: 1px solid #e9ecf0;
+            font-weight: 420;
         }
-        .top h2 { font-weight: 350; font-size: 1.3rem; color: #3f4e56; }
-        .top h2 span { color: #8e9ca3; margin-right: 0.3rem; }
+        .top h2 {
+            font-weight: 440;
+            font-size: 1.4rem;
+            color: #0b2b3a;
+            letter-spacing: -0.3px;
+        }
+        .top h2 span {
+            color: #7c9eb0;
+            margin-right: 0.3rem;
+            font-weight: 350;
+        }
         .method-wrap {
-            background: #e3ddd2;
+            background: #f1f4f7;
             border-radius: 40px;
-            padding: 0.25rem 0.8rem;
-            font-size: 0.8rem;
+            padding: 0.3rem 0.3rem 0.3rem 1.2rem;
             display: flex;
             align-items: center;
-            gap: 6px;
+            gap: 8px;
+            border: 1px solid #dde3e9;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.02);
+        }
+        .method-wrap span {
+            color: #1b4759;
+            font-weight: 500;
+            font-size: 0.85rem;
+            letter-spacing: 0.2px;
         }
         .method-wrap select {
-            background: transparent;
+            background: white;
             border: none;
-            font-size: 0.8rem;
-            font-weight: 450;
-            padding: 0.3rem 0;
+            border-radius: 30px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            padding: 0.45rem 1.2rem 0.45rem 1rem;
             outline: none;
-            color: #1f2e36;
+            color: #103745;
+            cursor: pointer;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+            border: 1px solid #d0dae3;
         }
-        .main { display: flex; flex: 1; overflow: hidden; }
+
+        .main {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+            background: #f5f7fa;
+        }
+
+        /* --- map panel with subtle border --- */
         .map-panel {
             flex: 3;
             position: relative;
-            background: #dbd5ca;
-            border-right: 1px solid #c2b9ab;
+            background: #eef2f4;
+            border-right: 1px solid #d8e0e7;
         }
-        #map { width: 100%; height: 100%; background: #d6d2c9; }
+        #map {
+            width: 100%;
+            height: 100%;
+            background: #e1e8ed;
+        }
         .map-overlay {
             position: absolute;
-            bottom: 20px;
-            left: 20px;
-            background: #ffffffdd;
-            backdrop-filter: blur(8px);
-            padding: 0.4rem 1rem;
-            border-radius: 60px;
+            bottom: 24px;
+            left: 24px;
+            background: #ffffff;
+            backdrop-filter: blur(10px);
+            padding: 0.6rem 1.4rem;
+            border-radius: 40px;
             font-size: 0.9rem;
-            border: 1px solid #b7ad9e;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.02);
-            color: #1f353f;
+            border: 1px solid #d2dde5;
+            box-shadow: 0 8px 18px rgba(0,0,0,0.04);
+            color: #103f4f;
             display: flex;
-            gap: 10px;
-            pointer-events: none;
+            gap: 12px;
+            font-weight: 480;
         }
-        .map-overlay span { font-family: 'SF Mono', 'Fira Code', monospace; font-weight: 450; }
+        .map-overlay span {
+            font-family: 'SF Mono', 'JetBrains Mono', monospace;
+            font-weight: 500;
+        }
+
+        /* --- right panel — pristine, airy, tech style --- */
         .times-panel {
-            flex: 1.2;
-            background: #faf8f4;
+            flex: 1.1;
+            background: #ffffff;
             display: flex;
             flex-direction: column;
             overflow-y: auto;
-            padding: 1.5rem 1.2rem;
-            border-left: 1px solid #ddd2c4;
-            min-width: 260px;
+            padding: 2rem 1.8rem;
+            border-left: 1px solid #ecf0f4;
+            min-width: 280px;
+            box-shadow: -4px 0 15px rgba(0,0,0,0.02);
         }
+
+        /* search row — subtle, high-end */
         .place-row {
             display: flex;
-            gap: 6px;
-            margin-bottom: 1.2rem;
-            background: #ede8e0;
-            padding: 0.2rem 0.2rem 0.2rem 1.2rem;
-            border-radius: 60px;
-            border: 1px solid #cdc2b4;
+            gap: 10px;
+            margin-bottom: 2.2rem;
+            background: #f8fafc;
+            padding: 0.2rem 0.2rem 0.2rem 1.5rem;
+            border-radius: 48px;
+            border: 1px solid #e3eaf0;
+            transition: border 0.15s;
+        }
+        .place-row:focus-within {
+            border-color: #5f9db8;
+            box-shadow: 0 0 0 3px rgba(95,157,184,0.08);
         }
         .place-row input {
             flex: 1;
             border: none;
             background: none;
-            font-size: 0.9rem;
-            padding: 0.5rem 0;
+            font-size: 0.95rem;
+            padding: 0.7rem 0;
             outline: none;
-            color: #1e2f38;
+            color: #1e3f4e;
+            font-weight: 430;
         }
         .place-row button {
-            background: #d9d0c2;
+            background: #eef4f8;
             border: none;
-            border-radius: 60px;
-            padding: 0.5rem 1.4rem;
-            font-size: 0.8rem;
-            font-weight: 500;
-            color: #2b3c45;
+            border-radius: 40px;
+            padding: 0.6rem 1.6rem;
+            font-size: 0.9rem;
+            font-weight: 560;
+            color: #135467;
             cursor: pointer;
             transition: 0.1s;
-            white-space: nowrap;
+            border: 1px solid #d1dee8;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
         }
-        .place-row button:hover { background: #cdc1b1; }
+        .place-row button:hover {
+            background: #e3ecf3;
+            border-color: #8fb4c9;
+            color: #043745;
+        }
 
+        /* prayer times — minimal, bold numbers */
         .prayer-list {
-            margin-top: 0.2rem;
-            border-top: 1px solid #dad1c3;
-            padding-top: 0.6rem;
+            margin-top: 0;
+            border-top: 1px solid #ecf2f7;
+            padding-top: 1rem;
         }
         .prayer-item {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 0.6rem 0.2rem;
-            border-bottom: 1px solid #e7dfd3;
-            font-size: 1.2rem;
-            font-weight: 340;
+            padding: 0.9rem 0.2rem;
+            border-bottom: 1px solid #f0f5fa;
+            font-size: 1.3rem;
         }
-        .prayer-item .name { font-weight: 400; color: #3e535d; }
-        .prayer-item .time {
-            font-family: 'SF Mono', 'JetBrains Mono', monospace;
+        .prayer-item .name {
+            font-weight: 460;
+            color: #2f5b6f;
             font-size: 1.1rem;
+            letter-spacing: -0.1px;
+        }
+        .prayer-item .time {
+            font-family: 'JetBrains Mono', 'SF Mono', monospace;
+            font-size: 1.2rem;
+            font-weight: 540;
+            color: #0b4356;
+            background: #f2f9ff;
+            padding: 0.25rem 1.1rem;
+            border-radius: 40px;
+            border: 1px solid #d8e8f0;
             letter-spacing: 0.3px;
         }
 
-        /* Footnote area — improved font sizes and styling */
+        /* footnote — super clean, monochrome, labels on right */
         .footnote {
-            margin-top: 1rem;
+            margin-top: 2rem;
             display: flex;
             flex-direction: column;
-            gap: 0.4rem;
-            border-top: 1px dashed #d3cbbf;
-            padding-top: 1rem;
+            gap: 0.6rem;
+            border-top: 1px solid #ecf2f7;
+            padding-top: 1.5rem;
         }
-        
-        /* Hijri row - larger, clearer font */
-        .hijri-row {
+        .hijri-row, .greg-row {
             display: flex;
             justify-content: space-between;
             align-items: baseline;
-            font-size: 0.9rem;
+            font-size: 0.95rem;
+            padding: 0.1rem 0;
         }
-        #hijriDate {
-            font-family: 'SF Mono', 'JetBrains Mono', 'Menlo', 'Consolas', monospace;
-            font-size: 0.9rem;
-            color: #2d424b;
-            font-weight: 500;
-            letter-spacing: 0.2px;
+        /* both date values — exactly the same style */
+        #hijriDate, #currentDate {
+            font-family: 'JetBrains Mono', 'SF Mono', monospace;
+            font-size: 0.95rem;
+            font-weight: 520;
+            color: #1e4a5d;
+            letter-spacing: -0.1px;
         }
-        #hijriLabel {
-            font-family: 'SF Mono', 'JetBrains Mono', 'Menlo', 'Consolas', monospace;
+        #hijriLabel, #tzOffset {
+            font-family: 'Inter', sans-serif;
             font-size: 0.85rem;
-            color: #5d726b;
-            font-weight: 400;
-            letter-spacing: 0.3px;
-            text-transform: uppercase;
+            font-weight: 440;
+            color: #7a99aa;
+            text-transform: none;
+            letter-spacing: 0.1px;
         }
-        
-        /* Gregorian row - matching size but slightly lighter */
-        .greg-row {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: space-between;
-            align-items: baseline;
-            font-size: 0.9rem;
+        /* error / hint — extremely subtle */
+        .error-note {
+            color: #c1593a;
+            font-size: 0.75rem;
+            min-height: 1.2rem;
+            margin-top: 0.3rem;
+            font-weight: 440;
         }
-        #currentDate {
-            font-family: 'SF Mono', 'JetBrains Mono', 'Menlo', 'Consolas', monospace;
-            font-size: 0.9rem;
-            color: #2d424b;
-            font-weight: 500;
-        }
-        #tzOffset {
-            font-family: 'SF Mono', 'JetBrains Mono', 'Menlo', 'Consolas', monospace;
-            font-size: 0.85rem;
-            color: #5d726b;
-            font-weight: 400;
+        div[style*="margin-top: 0.8rem;"] {
+            font-size: 0.7rem !important;
+            color: #9bb7c5 !important;
+            letter-spacing: 0.1px;
+            text-align: right;
+            margin-top: 1rem !important;
+            font-weight: 390;
         }
 
-        .error-note { color: #b44e3a; font-size: 0.75rem; min-height: 1.2rem; margin-top: 0.5rem; }
-
+        /* tiny loading indicator */
         .tz-loading {
-            font-size: 0.68rem;
-            color: #8d988b;
-            font-style: italic;
-            margin-top: 2px;
+            font-size: 0.65rem;
+            color: #b0c7d2;
+        }
+
+        /* remove any weird leftover backgrounds */
+        .method-wrap select {
+            background: white;
         }
     </style>
 </head>
 <body>
     <div class="top">
-        <h2><span></span> prayer / map</h2>
+        <h2><span>☾</span> prayer / map</h2>
         <div class="method-wrap">
-            <span>method</span>
+            <span>Method</span>
             <select id="methodSelect">
                 <option value="MWL" selected>MWL</option>
                 <option value="Jafari">Jafari</option>
@@ -219,15 +283,15 @@
         <div class="map-panel">
             <div id="map"></div>
             <div class="map-overlay">
-                <span></span>
+                <span>📍</span>
                 <span id="mapLatLng">--°N --°E</span>
             </div>
         </div>
 
         <div class="times-panel">
             <div class="place-row">
-                <input type="text" id="cityInput" placeholder="city or place" value="Mecca">
-                <button id="searchBtn">🔍</button>
+                <input type="text" id="cityInput" placeholder="City or place" value="Mecca">
+                <button id="searchBtn">Search</button>
             </div>
 
             <div class="prayer-list">
@@ -239,7 +303,7 @@
                 <div class="prayer-item"><span class="name">Isha</span><span class="time" id="isha">--:--</span></div>
             </div>
 
-            <!-- Footnote: Improved typography - larger, clearer fonts -->
+            <!-- Footnote: absolutely clean, both dates identical font -->
             <div class="footnote">
                 <div class="hijri-row">
                     <span id="hijriDate">—</span>
@@ -252,23 +316,22 @@
             </div>
 
             <div id="errorMsg" class="error-note"></div>
-            <div style="margin-top: 0.8rem; font-size: 0.7rem; color:#8d988b;">click map → city name appears</div>
+            <div style="margin-top: 0.8rem; font-size: 0.7rem; color:#8d988b;">click map · city name appears</div>
         </div>
     </div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <!-- adhan-js: high-precision Islamic prayer times based on Jean Meeus Astronomical Algorithms -->
     <script src="https://cdn.jsdelivr.net/npm/adhan@4.4.3/lib/bundles/adhan.umd.min.js"></script>
 
     <script>
     (function () {
 
-        // ── State ──────────────────────────────────────────────────────────
+        // ── state ─────────────────────────────────────────────────────────
         let lat = 21.4225, lng = 39.8262; // Mecca default
         let locationTimezone = 'Asia/Riyadh';
         let map, marker;
 
-        // ── adhan-js: calculation parameters by method name ───────────────
+        // ── adhan params ──────────────────────────────────────────────────
         function getCalcParams(name) {
             switch (name) {
                 case 'Jafari': {
@@ -289,14 +352,9 @@
             }
         }
 
-        // ── Timezone resolution — three layers of fallback ─────────────────
-        //
-        //  1. timeapi.io  — free, no key, CORS-friendly, returns IANA string
-        //  2. worldtimeapi.org — free, no key
-        //  3. Estimate from longitude (±15° per hour) — rough but always works
-        //
+        // ── timezone resolver ─────────────────────────────────────────────
         async function fetchTimezone(la, lo) {
-            // --- attempt 1: timeapi.io ---
+            // attempt 1: timeapi.io
             try {
                 const res = await fetch(
                     `https://timeapi.io/api/timezone/coordinate?latitude=${la}&longitude=${lo}`,
@@ -307,44 +365,13 @@
                     if (d && d.timeZone) return d.timeZone;
                 }
             } catch {}
-
-            // --- attempt 2: worldtimeapi.org ---
-            try {
-                const res = await fetch(
-                    `https://worldtimeapi.org/api/timezone`,
-                    { signal: AbortSignal.timeout(3000) }
-                );
-                // worldtimeapi doesn't do coords directly, skip to attempt 3
-            } catch {}
-
-            // --- attempt 3: nominatim address lookup → TZ from country code ---
-            // (best we can do without a key; may be slightly off at borders)
-            try {
-                const res = await fetch(
-                    `https://nominatim.openstreetmap.org/reverse?format=json&lat=${la}&lon=${lo}&zoom=3`,
-                    { signal: AbortSignal.timeout(4000) }
-                );
-                if (res.ok) {
-                    const d = await res.json();
-                    // Nominatim doesn't return TZ, but we can use the country
-                    // to make a better longitude-based estimate for some regions.
-                    // For now fall through to longitude estimate.
-                }
-            } catch {}
-
-            // --- fallback: estimate TZ from longitude ---
-            // Each 15° of longitude = 1 hour UTC offset.
-            // Clamp to ±12. This is imprecise but always shows *reasonable* times.
+            // fallback: longitude estimate
             const rawOffset = Math.round(lo / 15);
             const offset = Math.max(-12, Math.min(12, rawOffset));
-            // Return a fixed UTC±XX string that Intl can use
-            // Intl.DateTimeFormat supports "Etc/GMT±N" (note: sign is inverted for Etc/)
-            const etcTz = `Etc/GMT${offset <= 0 ? '+' : ''}${-offset}`;
-            console.warn(`TZ lookup failed — using longitude estimate: ${etcTz}`);
-            return etcTz;
+            return `Etc/GMT${offset <= 0 ? '+' : ''}${-offset}`;
         }
 
-        // ── Format a Date (UTC internally from adhan) → "HH:MM" in target TZ ──
+        // ── format time in target TZ ──────────────────────────────────────
         function formatInTz(dateObj, tz) {
             if (!dateObj || isNaN(dateObj)) return '--:--';
             try {
@@ -354,8 +381,7 @@
                     minute: '2-digit',
                     hour12: false
                 });
-            } catch (e) {
-                // If Etc/GMT±N didn't work in some engines, strip and retry
+            } catch {
                 try {
                     return dateObj.toLocaleTimeString('en-GB', {
                         hour: '2-digit', minute: '2-digit', hour12: false
@@ -402,7 +428,7 @@
             return `${hd} ${MONTHS[(hm-1)%12]} ${hy}`;
         }
 
-        // ── DOM refs ──────────────────────────────────────────────────────
+        // ── DOM shortcuts ─────────────────────────────────────────────────
         const $ = id => document.getElementById(id);
         const cityInput    = $('cityInput');
         const searchBtn    = $('searchBtn');
@@ -410,13 +436,7 @@
         const mapLatLngEl  = $('mapLatLng');
         const errorEl      = $('errorMsg');
 
-        // ── Core: compute prayer times for (lat, lng) in locationTimezone ─
-        //
-        // KEY FIX: adhan.PrayerTimes() takes a JS Date whose LOCAL (browser)
-        // year/month/day is used.  If the browser is in a different date than
-        // the target location, calculations drift.  We must construct the Date
-        // using the *location's* calendar date, not the browser's.
-        //
+        // ── refresh all times ─────────────────────────────────────────────
         function refreshTimes() {
             try {
                 const now    = new Date();
@@ -424,13 +444,8 @@
                 const coords = new adhan.Coordinates(lat, lng);
                 const params = getCalcParams(methodSelect.value);
 
-                // Get today's date AT THE TARGET LOCATION (may differ from browser date).
-                // en-CA gives "YYYY-MM-DD" — reliable across all locales.
                 const locDateStr = now.toLocaleDateString('en-CA', { timeZone: tz });
                 const [ly, lm, ld] = locDateStr.split('-').map(Number);
-
-                // Construct date at local NOON to avoid any DST-midnight edge cases.
-                // adhan only uses year/month/day — time-of-day is irrelevant.
                 const calcDate = new Date(ly, lm - 1, ld, 12, 0, 0);
 
                 const pt = new adhan.PrayerTimes(coords, calcDate, params);
@@ -442,17 +457,16 @@
                 $('maghrib').textContent = formatInTz(pt.maghrib, tz);
                 $('isha').textContent    = formatInTz(pt.isha,    tz);
 
-                // Dates in footnote - use the same timezone-aware date
                 const locDate = now.toLocaleDateString('en-US', {
                     timeZone: tz,
                     month: 'short',
                     day: 'numeric',
                     year: 'numeric'
                 });
-                
+
                 $('hijriDate').textContent  = hijriDateStr(now);
                 $('currentDate').textContent = locDate;
-                $('tzOffset').textContent = tzLabel(tz, now);
+                $('tzOffset').textContent   = tzLabel(tz, now);
 
                 errorEl.textContent = '';
             } catch (e) {
@@ -461,7 +475,7 @@
             }
         }
 
-        // ── Location changed: resolve timezone → refresh times ─────────────
+        // ── location changed handler ──────────────────────────────────────
         async function onLocationChange(newLat, newLng, knownTz) {
             lat = newLat; lng = newLng;
             const latDir = lat >= 0 ? 'N' : 'S';
@@ -469,16 +483,15 @@
             mapLatLngEl.textContent =
                 `${Math.abs(lat).toFixed(2)}°${latDir} ${Math.abs(lng).toFixed(2)}°${lngDir}`;
 
-            // Show placeholder while fetching TZ
             ['fajr','sunrise','dhuhr','asr','maghrib','isha'].forEach(id => {
-                $(id).textContent = '…';
+                $(id).textContent = '—:—';
             });
 
             locationTimezone = knownTz || await fetchTimezone(lat, lng);
             refreshTimes();
         }
 
-        // ── Reverse geocode → city name ────────────────────────────────────
+        // ── reverse geocode (city name) ───────────────────────────────────
         async function fetchCityName(la, lo) {
             try {
                 const res  = await fetch(
@@ -495,7 +508,7 @@
             }
         }
 
-        // ── Forward geocode ────────────────────────────────────────────────
+        // ── forward geocode ───────────────────────────────────────────────
         async function searchCity(query) {
             if (!query) return;
             errorEl.textContent = '';
@@ -520,7 +533,7 @@
             }
         }
 
-        // ── IP geolocation on startup ──────────────────────────────────────
+        // ── ip geolocation startup ────────────────────────────────────────
         async function initUserLocation() {
             try {
                 const res  = await fetch('https://ipapi.co/json/', { signal: AbortSignal.timeout(5000) });
@@ -528,7 +541,7 @@
                 if (data && data.latitude) {
                     const la = parseFloat(data.latitude);
                     const lo = parseFloat(data.longitude);
-                    const tz = data.timezone || null; // ipapi.co includes TZ
+                    const tz = data.timezone || null;
                     map.setView([la, lo], 6);
                     marker.setLatLng([la, lo]);
                     await fetchCityName(la, lo);
@@ -536,12 +549,11 @@
                     return;
                 }
             } catch {}
-            // Fallback: Mecca
             await fetchCityName(lat, lng);
             await onLocationChange(lat, lng, 'Asia/Riyadh');
         }
 
-        // ── Map setup ─────────────────────────────────────────────────────
+        // ── map initialisation ────────────────────────────────────────────
         function initMap() {
             map = L.map('map', { zoomControl: false }).setView([lat, lng], 5);
             L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
@@ -564,16 +576,13 @@
             initUserLocation();
         }
 
-        // ── Events ────────────────────────────────────────────────────────
+        // ── event listeners ───────────────────────────────────────────────
         searchBtn.addEventListener('click',  () => searchCity(cityInput.value.trim()));
         cityInput.addEventListener('keypress', e => { if (e.key === 'Enter') searchCity(cityInput.value.trim()); });
         methodSelect.addEventListener('change', refreshTimes);
 
-        // Refresh every minute (times don't change, but keeps date current across midnight)
         setInterval(refreshTimes, 60000);
-
         window.addEventListener('load', initMap);
-
     })();
     </script>
 </body>
