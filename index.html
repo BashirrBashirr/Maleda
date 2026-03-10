@@ -4,14 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>salaat • map — islamic / local times</title>
-    <!-- Leaflet (light) -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             background: #f3f1ec;
             font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
@@ -31,15 +26,8 @@
             font-weight: 350;
             letter-spacing: 0.2px;
         }
-        .top h2 {
-            font-weight: 350;
-            font-size: 1.3rem;
-            color: #3f4e56;
-        }
-        .top h2 span {
-            color: #8e9ca3;
-            margin-right: 0.3rem;
-        }
+        .top h2 { font-weight: 350; font-size: 1.3rem; color: #3f4e56; }
+        .top h2 span { color: #8e9ca3; margin-right: 0.3rem; }
         .method-wrap {
             background: #e3ddd2;
             border-radius: 40px;
@@ -58,22 +46,14 @@
             outline: none;
             color: #1f2e36;
         }
-        .main {
-            display: flex;
-            flex: 1;
-            overflow: hidden;
-        }
+        .main { display: flex; flex: 1; overflow: hidden; }
         .map-panel {
             flex: 3;
             position: relative;
             background: #dbd5ca;
             border-right: 1px solid #c2b9ab;
         }
-        #map {
-            width: 100%;
-            height: 100%;
-            background: #d6d2c9;
-        }
+        #map { width: 100%; height: 100%; background: #d6d2c9; }
         .map-overlay {
             position: absolute;
             bottom: 20px;
@@ -90,10 +70,7 @@
             gap: 10px;
             pointer-events: none;
         }
-        .map-overlay span {
-            font-family: 'SF Mono', 'Fira Code', monospace;
-            font-weight: 450;
-        }
+        .map-overlay span { font-family: 'SF Mono', 'Fira Code', monospace; font-weight: 450; }
         .times-panel {
             flex: 1.2;
             background: #faf8f4;
@@ -134,9 +111,8 @@
             transition: 0.1s;
             white-space: nowrap;
         }
-        .place-row button:hover {
-            background: #cdc1b1;
-        }
+        .place-row button:hover { background: #cdc1b1; }
+
         .prayer-list {
             margin-top: 0.2rem;
             border-top: 1px solid #dad1c3;
@@ -151,58 +127,38 @@
             font-size: 1.2rem;
             font-weight: 340;
         }
-        .prayer-item .name {
-            font-weight: 400;
-            color: #3e535d;
-        }
+        .prayer-item .name { font-weight: 400; color: #3e535d; }
         .prayer-item .time {
             font-family: 'SF Mono', 'JetBrains Mono', monospace;
             font-size: 1.1rem;
             letter-spacing: 0.3px;
         }
+
+        /* Footnote: exact same position/style as original, hijri added on top */
         .footnote {
             margin-top: 1rem;
             font-size: 0.72rem;
             color: #5d6b64;
             display: flex;
-            flex-wrap: wrap;
-            justify-content: space-between;
+            flex-direction: column;
+            gap: 0.15rem;
             border-top: 1px dashed #d3cbbf;
             padding-top: 1rem;
+        }
+        #hijriDisplay {
+            font-size: 0.72rem;
+            color: #5d6b64;
+        }
+        .greg-row {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
             gap: 0.3rem;
         }
-        .hijri-box {
-            background: #e3e0d6;
-            border-radius: 30px;
-            padding: 0.3rem 1rem;
-            font-size: 0.85rem;
-            font-weight: 400;
-            color: #2c4452;
-            margin-bottom: 1rem;
-            display: inline-block;
-            width: fit-content;
-        }
-        .error-note {
-            color: #b44e3a;
-            font-size: 0.75rem;
-            min-height: 1.2rem;
-            margin-top: 0.5rem;
-        }
-        .ping {
-            background: #c3d1d6;
-            width: 6px;
-            height: 6px;
-            border-radius: 50%;
-            display: inline-block;
-            margin-right: 6px;
-        }
-        .city-confirm {
-            font-size: 0.7rem;
-            color: #4f6b78;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
+        #currentDate { font-size: 0.72rem; color: #5d6b64; }
+        #tzOffset    { font-size: 0.72rem; color: #5d6b64; }
+
+        .error-note { color: #b44e3a; font-size: 0.75rem; min-height: 1.2rem; margin-top: 0.5rem; }
     </style>
 </head>
 <body>
@@ -211,13 +167,13 @@
         <div class="method-wrap">
             <span>method</span>
             <select id="methodSelect">
-                <option value="3" selected>MWL</option>
-                <option value="0">Jafari</option>
-                <option value="1">Karachi</option>
-                <option value="2">ISNA</option>
-                <option value="4">Makkah</option>
-                <option value="5">Egypt</option>
-                <option value="7">Tehran</option>
+                <option value="MWL" selected>MWL</option>
+                <option value="Jafari">Jafari</option>
+                <option value="Karachi">Karachi</option>
+                <option value="ISNA">ISNA</option>
+                <option value="Makkah">Makkah</option>
+                <option value="Egypt">Egypt</option>
+                <option value="Tehran">Tehran</option>
             </select>
         </div>
     </div>
@@ -237,9 +193,6 @@
                 <button id="searchBtn">🔍</button>
             </div>
 
-            <!-- current islamic & gregorian -->
-            <div class="hijri-box" id="hijriDisplay">loading Hijri ...</div>
-
             <div class="prayer-list">
                 <div class="prayer-item"><span class="name">Fajr</span><span class="time" id="fajr">--:--</span></div>
                 <div class="prayer-item"><span class="name">Sunrise</span><span class="time" id="sunrise">--:--</span></div>
@@ -249,319 +202,265 @@
                 <div class="prayer-item"><span class="name">Isha</span><span class="time" id="isha">--:--</span></div>
             </div>
 
+            <!-- Same position as original footnote, hijri line added above gregorian -->
             <div class="footnote">
-                <span id="currentDate"></span>
-                <span id="tzOffset"></span>
+                <span id="hijriDisplay">loading…</span>
+                <div class="greg-row">
+                    <span id="currentDate"></span>
+                    <span id="tzOffset"></span>
+                </div>
             </div>
+
             <div id="errorMsg" class="error-note"></div>
             <div style="margin-top: 0.8rem; font-size: 0.7rem; color:#8d988b;">click map → city name appears</div>
         </div>
     </div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <!-- adhan-js: high-precision Islamic prayer times based on Jean Meeus Astronomical Algorithms -->
+    <script src="https://cdn.jsdelivr.net/npm/adhan@4.4.3/lib/bundles/adhan.umd.min.js"></script>
+
     <script>
-        (function() {
-            // ---------- precise prayer calculation (adhan algorithm) ----------
-            const degRad = Math.PI / 180;
+    (function () {
 
-            function computePrayerTimes(lat, lon, method, date = new Date()) {
-                const y = date.getFullYear();
-                const m = date.getMonth() + 1;
-                const d = date.getDate();
+        // ── State ──────────────────────────────────────────────────────────
+        let lat = 21.4225, lng = 39.8262; // Mecca default
+        let locationTimezone = 'Asia/Riyadh';
+        let map, marker;
 
-                // julian day
-                const jd = (() => {
-                    let year = y, month = m, day = d;
-                    if (month <= 2) { year -= 1; month += 12; }
-                    const A = Math.floor(year / 100);
-                    const B = 2 - A + Math.floor(A / 4);
-                    return Math.floor(365.25 * (year + 4716)) + Math.floor(30.6001 * (month + 1)) + day + B - 1524.5;
-                })();
-
-                const daysSinceJ2000 = jd - 2451545.0;
-                const g = (357.529 + 0.98560028 * daysSinceJ2000) % 360;
-                const q = (280.459 + 0.98564736 * daysSinceJ2000) % 360;
-                const L = (q + 1.915 * Math.sin(g * degRad) + 0.020 * Math.sin(2 * g * degRad)) % 360;
-                const eps = 23.439 - 0.00000036 * daysSinceJ2000;
-                const RA = Math.atan2(Math.cos(eps * degRad) * Math.sin(L * degRad), Math.cos(L * degRad)) / degRad;
-                const decl = Math.asin(Math.sin(eps * degRad) * Math.sin(L * degRad)) / degRad;
-
-                // equation of time (minutes)
-                const eqTime = ((q - 0.0057183 - RA + (q - L < 180 ? 0 : 360)) % 360) * 4;
-
-                // solar noon (minutes from midnight UTC)
-                const noon = 720 - 4 * lon - eqTime; 
-
-                // method angles
-                const angles = {
-                    0: { fajr: 16, isha: 14 },       // Jafari
-                    1: { fajr: 18, isha: 18 },        // Karachi
-                    2: { fajr: 15, isha: 15 },         // ISNA
-                    3: { fajr: 18, isha: 17 },         // MWL
-                    4: { fajr: 18.5, isha: '90min' },  // Makkah
-                    5: { fajr: 19.5, isha: 17.5 },     // Egypt
-                    7: { fajr: 17.7, isha: 14 }        // Tehran
-                };
-                const mth = parseInt(method, 10);
-                const fajrAngle = angles[mth]?.fajr ?? 18;
-                let ishaAngle = angles[mth]?.isha ?? 17;
-                let ishaFixedMin = null;
-                if (mth === 4 && ishaAngle === '90min') { ishaFixedMin = 90; ishaAngle = null; }
-
-                const latRad = lat * degRad;
-
-                const computeTime = (angle, isSunrise = false, isAsr = false) => {
-                    if (isAsr) {
-                        // asr (shafii) shadow = 1
-                        const arg = (Math.sin(Math.atan(1 / (1 + Math.tan(Math.abs(lat - decl) * degRad)))) - Math.sin(decl * degRad) * Math.sin(latRad)) 
-                                    / (Math.cos(decl * degRad) * Math.cos(latRad));
-                        const altAsr = Math.asin(Math.max(-1, Math.min(1, arg))) / degRad;
-                        const cosH = (Math.sin(altAsr * degRad) - Math.sin(decl*degRad)*Math.sin(latRad)) 
-                                    / (Math.cos(decl*degRad)*Math.cos(latRad));
-                        const H = Math.acos(Math.max(-1, Math.min(1, cosH))) / degRad;
-                        return noon + (H * 4);
-                    }
-                    if (isSunrise) {
-                        const cosH = (Math.sin(-0.833 * degRad) - Math.sin(decl*degRad)*Math.sin(latRad)) 
-                                    / (Math.cos(decl*degRad)*Math.cos(latRad));
-                        const H = Math.acos(Math.max(-1, Math.min(1, cosH))) / degRad;
-                        return noon - (H * 4);
-                    }
-                    const cosH = (Math.sin(angle * degRad) - Math.sin(decl*degRad)*Math.sin(latRad)) 
-                                / (Math.cos(decl*degRad)*Math.cos(latRad));
-                    const H = Math.acos(Math.max(-1, Math.min(1, cosH))) / degRad;
-                    return noon - (H * 4);
-                };
-
-                const fajr = computeTime(fajrAngle, false, false);
-                const sunrise = computeTime(null, true, false);
-                const dhuhr = noon;
-                const asr = computeTime(null, false, true);
-                const maghrib = 2*noon - sunrise;  // sunset
-                let isha;
-                if (ishaFixedMin !== null) isha = maghrib + ishaFixedMin;
-                else {
-                    const ishaT = computeTime(ishaAngle, false, false);
-                    isha = noon + (noon - ishaT);
+        // ── adhan-js: calculation parameters by method name ───────────────
+        function getCalcParams(name) {
+            switch (name) {
+                case 'Jafari': {
+                    // Jafari / Shia Ithna Ashari
+                    const p = adhan.CalculationMethod.Tehran();
+                    p.fajrAngle   = 16;
+                    p.ishaAngle   = 14;
+                    p.maghribAngle = 4;
+                    p.ishaInterval = 0;
+                    return p;
                 }
-
-                let times = [fajr, sunrise, dhuhr, asr, maghrib, isha];
-                const utcOffset = -date.getTimezoneOffset(); // minutes
-                return times.map(t => ((t + utcOffset + 1440) % 1440));
+                case 'Karachi': return adhan.CalculationMethod.Karachi();
+                case 'ISNA':    return adhan.CalculationMethod.NorthAmerica();
+                case 'Makkah':  return adhan.CalculationMethod.UmmAlQura();
+                case 'Egypt':   return adhan.CalculationMethod.Egyptian();
+                case 'Tehran':  return adhan.CalculationMethod.Tehran();
+                case 'MWL':
+                default:        return adhan.CalculationMethod.MuslimWorldLeague();
             }
+        }
 
-            const formatTime = (min) => {
-                if (min === null || isNaN(min)) return '--:--';
-                const h = Math.floor(min / 60) % 24;
-                const m = Math.floor(min % 60);
-                return `${h.toString().padStart(2,'0')}:${m.toString().padStart(2,'0')}`;
-            };
+        // ── Timezone: get IANA string for coordinates ──────────────────────
+        // Uses geonames.org public demo (no key). Falls back to browser TZ.
+        async function fetchTimezone(la, lo) {
+            try {
+                const res = await fetch(
+                    `https://secure.geonames.org/timezoneJSON?lat=${la}&lng=${lo}&username=demo`,
+                    { signal: AbortSignal.timeout(4000) }
+                );
+                const d = await res.json();
+                if (d && d.timezoneId) return d.timezoneId;
+            } catch {}
+            // fallback: browser's own timezone
+            return Intl.DateTimeFormat().resolvedOptions().timeZone;
+        }
 
-            // ---------- Hijri (islamic) date approximation ----------
-            function getHijriDate(gregDate = new Date()) {
-                // simple fixed math (Kuwaiti algorithm style)
-                const day = gregDate.getDate();
-                const month = gregDate.getMonth() + 1;
-                const year = gregDate.getFullYear();
-                if (year < 1900) return 'unknown';
-                
-                let jd = Math.floor((1461 * (year + 4800 + Math.floor((month - 14) / 12))) / 4) +
-                          Math.floor((367 * (month - 2 - 12 * (Math.floor((month - 14) / 12)))) / 12) -
-                          Math.floor((3 * (Math.floor((year + 4900 + Math.floor((month - 14) / 12)) / 100))) / 4) + day - 32075;
-                // julian to islamic
-                let l = jd - 1948440 + 10632;
-                let n = Math.floor((l - 1) / 10631);
-                l = l - 10631 * n + 354;
-                let j = (Math.floor((10985 - l) / 5316)) * (Math.floor((50 * l) / 17719)) + (Math.floor(l / 5670)) * (Math.floor((43 * l) / 15238));
-                l = l - (Math.floor((30 - j) / 15)) * (Math.floor((17719 * j) / 50)) - (Math.floor(j / 16)) * (Math.floor((15238 * j) / 43)) + 29;
-                let m = Math.floor((24 * l) / 709);
-                let d = l - Math.floor((709 * m) / 24);
-                let y = 30 * n + j - 30;
-
-                return { year: y, month: m, day: d };
-            }
-
-            function formatHijri(date) {
-                const h = getHijriDate(date);
-                if (!h || h.year < 0) return '-- Muharram --';
-                const monthNames = ['Muharram', 'Safar', 'Rabiʻ I', 'Rabiʻ II', 'Jumada I', 'Jumada II', 'Rajab', 'Shaʻban', 'Ramadan', 'Shawwal', 'Dhuʻl-Qiʻdah', 'Dhuʻl-Hijjah'];
-                const mName = monthNames[(h.month - 1) % 12] || '';
-                return `${h.day} ${mName} ${h.year} AH`;
-            }
-
-            // ---------- DOM elements ----------
-            const cityInput = document.getElementById('cityInput');
-            const searchBtn = document.getElementById('searchBtn');
-            const methodSelect = document.getElementById('methodSelect');
-            const fajrEl = document.getElementById('fajr');
-            const sunriseEl = document.getElementById('sunrise');
-            const dhuhrEl = document.getElementById('dhuhr');
-            const asrEl = document.getElementById('asr');
-            const maghribEl = document.getElementById('maghrib');
-            const ishaEl = document.getElementById('isha');
-            const mapLatLngEl = document.getElementById('mapLatLng');
-            const dateEl = document.getElementById('currentDate');
-            const tzEl = document.getElementById('tzOffset');
-            const errorEl = document.getElementById('errorMsg');
-            const hijriDisplay = document.getElementById('hijriDisplay');
-
-            // state
-            let lat = 21.4225, lng = 39.8262; // default Mecca
-            let map, marker;
-            let currentCityName = 'Mecca';    // friendly name
-
-            // update times + islamic date + display
-            function refreshTimes() {
-                try {
-                    const method = methodSelect.value;
-                    const now = new Date();
-                    const times = computePrayerTimes(lat, lng, method, now);
-                    fajrEl.textContent = formatTime(times[0]);
-                    sunriseEl.textContent = formatTime(times[1]);
-                    dhuhrEl.textContent = formatTime(times[2]);
-                    asrEl.textContent = formatTime(times[3]);
-                    maghribEl.textContent = formatTime(times[4]);
-                    ishaEl.textContent = formatTime(times[5]);
-
-                    const dateStr = now.toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' });
-                    dateEl.textContent = dateStr;
-                    const tz = now.getTimezoneOffset() / -60;
-                    tzEl.textContent = `UTC${tz >=0 ? '+' : ''}${tz}`;
-
-                    // Islamic date
-                    hijriDisplay.textContent = `${formatHijri(now)}`;
-
-                    errorEl.textContent = '';
-                } catch (e) {
-                    errorEl.textContent = 'prayer time error';
-                }
-            }
-
-            function updateLatLngDisplay() {
-                const latStr = lat.toFixed(4);
-                const lngStr = lng.toFixed(4);
-                const latDir = lat >= 0 ? 'N' : 'S';
-                const lngDir = lng >= 0 ? 'E' : 'W';
-                mapLatLngEl.textContent = `${Math.abs(lat).toFixed(2)}°${latDir} ${Math.abs(lng).toFixed(2)}°${lngDir}`;
-                refreshTimes();
-            }
-
-            // reverse geocode: get city name from lat/lon and fill input
-            async function fetchCityName(lat, lon) {
-                try {
-                    const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=18&addressdetails=1`);
-                    const data = await res.json();
-                    if (data && data.display_name) {
-                        // extract short city/town
-                        const addr = data.address || {};
-                        const city = addr.city || addr.town || addr.village || addr.hamlet || data.display_name.split(',')[0];
-                        currentCityName = city || 'unknown';
-                        cityInput.value = currentCityName;
-                    } else {
-                        cityInput.value = `${lat.toFixed(2)}°, ${lon.toFixed(2)}°`;
-                    }
-                } catch {
-                    cityInput.value = `${lat.toFixed(2)}°, ${lon.toFixed(2)}°`;
-                }
-            }
-
-            // geocoding (forward) with city name update
-            async function searchCity(query) {
-                if (!query) return;
-                try {
-                    const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1`);
-                    const data = await res.json();
-                    if (data && data[0]) {
-                        const { lat: newLat, lon: newLon, display_name } = data[0];
-                        lat = parseFloat(newLat);
-                        lng = parseFloat(newLon);
-                        const shortName = display_name.split(',')[0];
-                        cityInput.value = shortName;
-                        currentCityName = shortName;
-                        map.setView([lat, lng], 8);
-                        marker.setLatLng([lat, lng]);
-                        updateLatLngDisplay();
-                    } else {
-                        errorEl.textContent = 'city not found';
-                    }
-                } catch {
-                    errorEl.textContent = 'geocoding fail';
-                }
-            }
-
-            // detect user IP location (approx) on start
-            async function initUserLocation() {
-                try {
-                    const res = await fetch('https://ipapi.co/json/');
-                    const data = await res.json();
-                    if (data && data.latitude && data.longitude) {
-                        lat = parseFloat(data.latitude);
-                        lng = parseFloat(data.longitude);
-                        currentCityName = data.city || 'your location';
-                        cityInput.value = currentCityName;
-                        map.setView([lat, lng], 6);
-                        marker.setLatLng([lat, lng]);
-                        updateLatLngDisplay();
-                        fetchCityName(lat, lng); // refine name
-                    } else {
-                        // fallback to Mecca
-                        fetchCityName(lat, lng);
-                    }
-                } catch (e) {
-                    // use default mecca & reverse
-                    fetchCityName(lat, lng);
-                } finally {
-                    refreshTimes();
-                }
-            }
-
-            // init map
-            function initMap() {
-                map = L.map('map', { zoomControl: false }).setView([lat, lng], 5);
-                L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-                    attribution: '© OpenStreetMap'
-                }).addTo(map);
-                marker = L.marker([lat, lng], { draggable: true }).addTo(map);
-
-                marker.on('dragend', async (e) => {
-                    const pos = marker.getLatLng();
-                    lat = pos.lat;
-                    lng = pos.lng;
-                    await fetchCityName(lat, lng);   // get city name on drag
-                    updateLatLngDisplay();
+        // ── Format a Date in a specific IANA timezone → "HH:MM" ───────────
+        function formatInTz(dateObj, tz) {
+            if (!dateObj || isNaN(dateObj)) return '--:--';
+            try {
+                return dateObj.toLocaleTimeString('en-GB', {
+                    timeZone: tz,
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    hour12: false
                 });
-
-                map.on('click', async (e) => {
-                    const pos = e.latlng;
-                    lat = pos.lat;
-                    lng = pos.lng;
-                    marker.setLatLng(pos);
-                    await fetchCityName(lat, lng);   // ← city name appears in input box
-                    updateLatLngDisplay();
-                });
-
-                // initial set: try IP location, then update
-                initUserLocation().then(() => {
-                    // extra call to ensure hijri & times
-                    refreshTimes();
-                });
+            } catch {
+                return '--:--';
             }
+        }
 
-            // search on click / enter
-            searchBtn.addEventListener('click', () => searchCity(cityInput.value.trim()));
-            cityInput.addEventListener('keypress', (e) => {
-                if (e.key === 'Enter') searchCity(cityInput.value.trim());
+        // ── UTC offset label for a timezone at a given instant ─────────────
+        function tzLabel(tz, date) {
+            try {
+                const parts = new Intl.DateTimeFormat('en', {
+                    timeZone: tz,
+                    timeZoneName: 'shortOffset'
+                }).formatToParts(date);
+                const p = parts.find(x => x.type === 'timeZoneName');
+                return p ? p.value : '';
+            } catch {
+                const off = -date.getTimezoneOffset() / 60;
+                return `UTC${off >= 0 ? '+' : ''}${off}`;
+            }
+        }
+
+        // ── Hijri date (Kuwaiti algorithm) ────────────────────────────────
+        function hijriDate(d) {
+            d = d || new Date();
+            const day = d.getDate(), mo = d.getMonth() + 1, yr = d.getFullYear();
+            let jd = Math.floor((1461*(yr+4800+Math.floor((mo-14)/12)))/4)
+                   + Math.floor((367*(mo-2-12*Math.floor((mo-14)/12)))/12)
+                   - Math.floor((3*Math.floor((yr+4900+Math.floor((mo-14)/12))/100))/4)
+                   + day - 32075;
+            let l = jd - 1948440 + 10632;
+            const n = Math.floor((l-1)/10631);
+            l = l - 10631*n + 354;
+            const j = Math.floor((10985-l)/5316)*Math.floor((50*l)/17719)
+                    + Math.floor(l/5670)*Math.floor((43*l)/15238);
+            l = l - Math.floor((30-j)/15)*Math.floor((17719*j)/50)
+                  - Math.floor(j/16)*Math.floor((15238*j)/43) + 29;
+            const hm = Math.floor((24*l)/709);
+            const hd = l - Math.floor((709*hm)/24);
+            const hy = 30*n + j - 30;
+            const MONTHS = ['Muharram','Safar','Rabiʻ I','Rabiʻ II','Jumada I','Jumada II',
+                            'Rajab','Shaʻban','Ramadan','Shawwal','Dhuʻl-Qiʻdah','Dhuʻl-Hijjah'];
+            return `${hd} ${MONTHS[(hm-1)%12]} ${hy} AH`;
+        }
+
+        // ── DOM ────────────────────────────────────────────────────────────
+        const $ = id => document.getElementById(id);
+        const cityInput    = $('cityInput');
+        const searchBtn    = $('searchBtn');
+        const methodSelect = $('methodSelect');
+        const mapLatLngEl  = $('mapLatLng');
+        const errorEl      = $('errorMsg');
+
+        // ── Refresh prayer times display ───────────────────────────────────
+        function refreshTimes() {
+            try {
+                const now  = new Date();
+                const tz   = locationTimezone;
+                const coords = new adhan.Coordinates(lat, lng);
+                const params = getCalcParams(methodSelect.value);
+
+                // Determine today's date *at the location* (may differ from browser's date)
+                const locDateStr = now.toLocaleDateString('en-CA', { timeZone: tz }); // "YYYY-MM-DD"
+                const [ly, lm, ld] = locDateStr.split('-').map(Number);
+                const calcDate = new Date(ly, lm - 1, ld); // local noon — adhan uses y/m/d only
+
+                const pt = new adhan.PrayerTimes(coords, calcDate, params);
+
+                $('fajr').textContent    = formatInTz(pt.fajr,    tz);
+                $('sunrise').textContent = formatInTz(pt.sunrise,  tz);
+                $('dhuhr').textContent   = formatInTz(pt.dhuhr,   tz);
+                $('asr').textContent     = formatInTz(pt.asr,     tz);
+                $('maghrib').textContent = formatInTz(pt.maghrib, tz);
+                $('isha').textContent    = formatInTz(pt.isha,    tz);
+
+                // Dates
+                $('hijriDisplay').textContent = hijriDate(now);
+                $('currentDate').textContent  = now.toLocaleDateString('en-US', {
+                    timeZone: tz, month: 'short', day: 'numeric', year: 'numeric'
+                });
+                $('tzOffset').textContent = tzLabel(tz, now);
+
+                errorEl.textContent = '';
+            } catch (e) {
+                errorEl.textContent = 'calculation error';
+                console.error(e);
+            }
+        }
+
+        // ── Location changed: fetch TZ then refresh ────────────────────────
+        async function onLocationChange(newLat, newLng, knownTz) {
+            lat = newLat; lng = newLng;
+            const latDir = lat >= 0 ? 'N' : 'S';
+            const lngDir = lng >= 0 ? 'E' : 'W';
+            mapLatLngEl.textContent = `${Math.abs(lat).toFixed(2)}°${latDir} ${Math.abs(lng).toFixed(2)}°${lngDir}`;
+
+            locationTimezone = knownTz || await fetchTimezone(lat, lng);
+            refreshTimes();
+        }
+
+        // ── Reverse geocode → city name in input ───────────────────────────
+        async function fetchCityName(la, lo) {
+            try {
+                const res  = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${la}&lon=${lo}&zoom=10`);
+                const data = await res.json();
+                const addr = data.address || {};
+                cityInput.value = addr.city || addr.town || addr.village || addr.hamlet
+                                  || data.display_name.split(',')[0]
+                                  || `${la.toFixed(2)}°, ${lo.toFixed(2)}°`;
+            } catch {
+                cityInput.value = `${la.toFixed(2)}°, ${lo.toFixed(2)}°`;
+            }
+        }
+
+        // ── Forward geocode ────────────────────────────────────────────────
+        async function searchCity(query) {
+            if (!query) return;
+            try {
+                const res  = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1`);
+                const data = await res.json();
+                if (data && data[0]) {
+                    const la = parseFloat(data[0].lat);
+                    const lo = parseFloat(data[0].lon);
+                    cityInput.value = data[0].display_name.split(',')[0];
+                    map.setView([la, lo], 8);
+                    marker.setLatLng([la, lo]);
+                    await onLocationChange(la, lo, null);
+                } else {
+                    errorEl.textContent = 'city not found';
+                }
+            } catch {
+                errorEl.textContent = 'geocoding fail';
+            }
+        }
+
+        // ── IP geolocation on startup ──────────────────────────────────────
+        async function initUserLocation() {
+            try {
+                const res  = await fetch('https://ipapi.co/json/');
+                const data = await res.json();
+                if (data && data.latitude) {
+                    const la = parseFloat(data.latitude);
+                    const lo = parseFloat(data.longitude);
+                    const tz = data.timezone || null; // ipapi.co gives us the TZ for free!
+                    map.setView([la, lo], 6);
+                    marker.setLatLng([la, lo]);
+                    await fetchCityName(la, lo);
+                    await onLocationChange(la, lo, tz);
+                    return;
+                }
+            } catch {}
+            // Fallback: Mecca
+            await fetchCityName(lat, lng);
+            await onLocationChange(lat, lng, 'Asia/Riyadh');
+        }
+
+        // ── Map ────────────────────────────────────────────────────────────
+        function initMap() {
+            map = L.map('map', { zoomControl: false }).setView([lat, lng], 5);
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+                attribution: '© OpenStreetMap'
+            }).addTo(map);
+            marker = L.marker([lat, lng], { draggable: true }).addTo(map);
+
+            marker.on('dragend', async e => {
+                const p = e.target.getLatLng();
+                await fetchCityName(p.lat, p.lng);
+                await onLocationChange(p.lat, p.lng, null);
             });
-            methodSelect.addEventListener('change', refreshTimes);
 
-            // periodic refresh (minute)
-            setInterval(refreshTimes, 60000);
-
-            // start
-            window.addEventListener('load', () => {
-                initMap();
+            map.on('click', async e => {
+                marker.setLatLng(e.latlng);
+                await fetchCityName(e.latlng.lat, e.latlng.lng);
+                await onLocationChange(e.latlng.lat, e.latlng.lng, null);
             });
-        })();
+
+            initUserLocation();
+        }
+
+        // ── Events ─────────────────────────────────────────────────────────
+        searchBtn.addEventListener('click', () => searchCity(cityInput.value.trim()));
+        cityInput.addEventListener('keypress', e => { if (e.key === 'Enter') searchCity(cityInput.value.trim()); });
+        methodSelect.addEventListener('change', refreshTimes);
+        setInterval(refreshTimes, 60000);
+
+        window.addEventListener('load', initMap);
+
+    })();
     </script>
 </body>
 </html>
