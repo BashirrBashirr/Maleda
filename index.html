@@ -31,7 +31,7 @@
         }
         .top h2 {
             font-weight: 440;
-            font-size: 1.4rem;        /* increased from 1.4rem by +0.1 (1 unit) */
+            font-size: 1.5rem;        /* increased from 1.4rem by +0.1 (1 unit) */
             color: #0b2b3a;
             letter-spacing: -0.3px;
         }
@@ -135,10 +135,10 @@
             box-shadow: -4px 0 15px rgba(0,0,0,0.02);
         }
 
-        /* --- search bar moved down: added margin-top and adjusted spacing --- */
+        /* --- search bar moved further down, using flex column and margin to match dimensions --- */
         .search-section {
-            margin-top: 1.2rem;           /* pushes search bar down */
-            margin-bottom: 2.2rem;
+            margin-top: 2.5rem;           /* significantly increased to push bar down */
+            margin-bottom: 2.5rem;         /* balanced bottom margin */
         }
         .place-row {
             display: flex;
@@ -307,7 +307,7 @@
         </div>
 
         <div class="times-panel">
-            <!-- search bar moved further down using search-section wrapper -->
+            <!-- search bar moved significantly down with increased margins -->
             <div class="search-section">
                 <div class="place-row">
                     <input type="text" id="cityInput" placeholder="City or place" value="Mecca">
