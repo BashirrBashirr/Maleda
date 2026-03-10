@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>salaat · map — custom ring + satellite · zoom</title>
+    <title>salaat · map — custom ring + satellite · zoom (smooth)</title>
     <!-- Leaflet & fonts -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -90,7 +90,7 @@
         #map {
             width: 100%;
             height: 100%;
-            background: #cad2d9;  /* fallback, no white lines (soft grey) */
+            background: #b3c5d4;  /* slightly richer grey – hides white tiles better */
         }
         .map-overlay {
             position: absolute;
@@ -107,14 +107,14 @@
             display: flex;
             gap: 12px;
             font-weight: 480;
-            z-index: 1000; /* keep above map */
+            z-index: 1000;
         }
         .map-overlay span {
             font-family: 'SF Mono', monospace;
             font-weight: 500;
         }
 
-        /* --- minimalist zoom buttons (cozy with palette) --- */
+        /* --- zoom buttons (same style) --- */
         .custom-zoom-controls {
             position: absolute;
             top: 20px;
@@ -149,7 +149,7 @@
             box-shadow: 0 6px 14px rgba(21, 70, 90, 0.12);
             color: #0b3a4a;
         }
-        /* satellite toggle – matches method selector style but as button */
+        /* satellite toggle */
         .layer-toggle {
             position: absolute;
             top: 20px;
@@ -492,7 +492,7 @@
         }
 
         // ------------------------------------------------------------------
-        // 2. original prayer times + custom marker + layer/zoom controls
+        // 2. original prayer times + marker + layer/zoom controls (smooth)
         // ------------------------------------------------------------------
         let lat = 21.4225, lng = 39.8262;
         let locationTimezone = 'Asia/Riyadh';
@@ -635,33 +635,25 @@
         }
 
         function initMap() {
+            // RESTORE ORIGINAL SMOOTH BEHAVIOR: no fade/zoom disabling
             map = L.map('map', { 
-                zoomControl: false,   // we add custom
-                fadeAnimation: false,  // reduce white flicker
-                zoomAnimation: false   // faster, avoid white tiles
+                zoomControl: false
+                // all animations left at defaults (smooth, original speed)
             }).setView([0, 0], 2);
 
-            // --- fast street tile (same as before) ---
+            // --- street tile (exactly as original) ---
             streetLayer = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: '© OpenStreetMap',
-                detectRetina: true,
-                keepBuffer: 4,
-                updateWhenIdle: false,
-                updateWhenZooming: true,
-                zIndex: 1
+                attribution: '© OpenStreetMap'
+                // no extra performance flags — original smoothness
             }).addTo(map);
 
-            // --- satellite (ESRI world imagery — sharp, professional) ---
+            // --- satellite (ESRI world imagery) ---
             satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
                 attribution: 'Tiles © Esri — Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community',
-                maxZoom: 19,
-                keepBuffer: 4,
-                updateWhenIdle: false,
-                updateWhenZooming: true,
-                zIndex: 1
+                maxZoom: 19
             });
 
-            // red draggable marker
+            // red draggable marker (exact same)
             const redIcon = L.icon({
                 iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
                 shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
