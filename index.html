@@ -563,7 +563,17 @@
         function initMap() {
             map = L.map('map', { zoomControl: false }).setView([lat, lng], 5);
             L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', { attribution: '© OpenStreetMap' }).addTo(map);
-            marker = L.marker([lat, lng], { draggable: true }).addTo(map);
+
+            // --- GREEN DRAGGABLE MARKER (jungle green, identical shape) ---
+            const greenIcon = L.icon({
+                iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png',
+                shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
+                iconSize: [25, 41],
+                iconAnchor: [12, 41],
+                popupAnchor: [1, -34],
+                shadowSize: [41, 41]
+            });
+            marker = L.marker([lat, lng], { draggable: true, icon: greenIcon }).addTo(map);
 
             marker.on('dragend', async (e) => {
                 const p = e.target.getLatLng();
@@ -592,8 +602,6 @@
             });
             L.marker([21.4225, 39.8262], { icon: ringIcon, title: 'Kaaba · BIGGER opt7#3 brass' }).addTo(map)
                 .bindPopup('Al-Kaʿbah al-Musharrafa');
-
-            // also move the default draggable marker behind? No, keep separate; user understands
         }
 
         searchBtn.addEventListener('click', () => searchCity(cityInput.value.trim()));
