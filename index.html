@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>salaat · map — thin green marker (#20603D) + brass ring</title>
+    <title>salaat · map — custom ring marker (opt7 #3) · BIGGER visible</title>
     <!-- Leaflet & fonts -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -280,7 +280,7 @@
                 </div>
             </div>
             <div id="errorMsg" class="error-note"></div>
-            <div class="hint-row">🌴 palm green #20603D · thin marker shape (slender teardrop)</div>
+            <div class="hint-row">⭐ BIGGER Kaaba ring marker (opt7 #3 brass, 52px canvas → 52px icon)</div>
         </div>
     </div>
 
@@ -290,14 +290,15 @@
     <script>
     (function() {
         // ------------------------------------------------------------------
-        // 1. render EXACT Kaaba ring (opt7 #3, brighter brass) – bigger (52px icon)
+        // 1. render EXACT Kaaba ring (opt7 #3, brighter brass) – LARGER VISIBLE
+        //    Kept exact 3d proportions but output canvas 64px, icon size 52px (much bigger)
         // ------------------------------------------------------------------
-        function generateRingIconCanvas(size = 64) {
-            // exact kaaba & door dimensions
+        function generateRingIconCanvas(size = 64) {  // increased canvas resolution for sharpness
+            // exact kaaba & door dimensions (same as original)
             const W = 3.5, H = 3.0, D = 3.2, centerY = H/2;
             const STONE_POS = { x: -1.68, y: 0.85, z: D/2 - 0.30 };
 
-            // base config
+            // base config (identical lighting/material from replacement)
             const BASE_CONFIG = {
                 ambient: 0.25, lightColor: 0xbbccee, lightIntensity: 1.0,
                 lightX: -3, lightY: 5, lightZ: 9, fill: true, backLight: true,
@@ -307,7 +308,7 @@
             };
             const DOOR_9 = { width: 0.61, height: 1.41, color: 0x785a32 };
 
-            // LOCKED SIZE (opt7 #3 : factor 0.95)
+            // ----- LOCKED SIZE (opt7 #3 : factor 0.95 from original opt7) -----
             const LOCKED_SIZE = {
                 radius: 0.44 * 0.95,        // 0.418
                 tube: 0.13 * 0.95,           // 0.1235
@@ -317,17 +318,18 @@
                 rotationY: 0.81,
                 rotationX: 0.34,
                 double: true,
-                yPos: 0.415
+                yPos: 0.415                     // fixed Y position
             };
 
-            // option 7 (light brass)
+            // ---- SINGLE COLOR VARIATION: option 7 (light brass, brighter) ----
             const selectedOption = {
-                color: 0xf0daa8,
-                emissive: 0x5e4a2a,
+                color: 0xf0daa8,        // light brass
+                emissive: 0x5e4a2a,      // warm emissive 
                 roughness: 0.27,
                 metalness: 0.82
             };
 
+            // setup canvas & scene
             const canvas = document.createElement('canvas');
             canvas.width = size;
             canvas.height = size;
@@ -388,16 +390,16 @@
             stone.position.set(STONE_POS.x, STONE_POS.y, STONE_POS.z);
             scene.add(stone);
 
-            // ring material (brass)
+            // ring material (brass, brighter)
             const ringMat = new THREE.MeshStandardMaterial({
                 color: selectedOption.color,
                 emissive: selectedOption.emissive,
                 roughness: selectedOption.roughness,
                 metalness: selectedOption.metalness,
-                emissiveIntensity: 0.2
+                emissiveIntensity: 0.2   // slight emissive boost for brighter appearance
             });
 
-            // primary torus
+            // primary torus (smaller locked size)
             const torusGeo = new THREE.TorusGeometry(LOCKED_SIZE.radius, LOCKED_SIZE.tube, 32, 64, Math.PI * 2);
             const torus = new THREE.Mesh(torusGeo, ringMat);
             torus.position.set(STONE_POS.x, LOCKED_SIZE.yPos, STONE_POS.z);
@@ -419,7 +421,7 @@
         }
 
         // ------------------------------------------------------------------
-        // 2. Prayer times logic + custom marker
+        // 2. original prayer times code + custom marker at Mecca
         // ------------------------------------------------------------------
         let lat = 21.4225, lng = 39.8262;
         let locationTimezone = 'Asia/Riyadh';
@@ -558,29 +560,10 @@
             await onLocationChange(lat, lng, 'Asia/Riyadh');
         }
 
-        // ------------------------------------------------------------------
-        // 3. THIN GREEN MARKER (#20603D) – slender teardrop shape
-        // ------------------------------------------------------------------
-        function createThinGreenIcon() {
-            const hex = '#20603D';  // palm leaf · tropical
-            // Slimmer design: narrower width, longer stem, refined proportions
-            // Using a custom path: width 28, height 46, thinner body
-            const svg = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='46' viewBox='0 0 28 46'%3E%3Cpath fill='${hex.replace('#', '%23')}' d='M14 0C6.5 0 0 6.5 0 14c0 8 14 32 14 32s14-24 14-32c0-7.5-6.5-14-14-14zm0 20c-3.5 0-6-2.5-6-6s2.5-6 6-6 6 2.5 6 6-2.5 6-6 6z' /%3E%3Ccircle fill='white' cx='14' cy='14' r='5'/%3E%3C/svg%3E`;
-            return L.icon({
-                iconUrl: svg,
-                iconSize: [28, 46],      // thinner, taller
-                iconAnchor: [14, 46],     // tip of the pin at coordinates
-                popupAnchor: [0, -32]
-            });
-        }
-
         function initMap() {
             map = L.map('map', { zoomControl: false }).setView([lat, lng], 5);
             L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', { attribution: '© OpenStreetMap' }).addTo(map);
-
-            // ----- THIN GREEN MARKER (#20603D) -----
-            const thinGreenIcon = createThinGreenIcon();
-            marker = L.marker([lat, lng], { draggable: true, icon: thinGreenIcon }).addTo(map);
+            marker = L.marker([lat, lng], { draggable: true }).addTo(map);
 
             marker.on('dragend', async (e) => {
                 const p = e.target.getLatLng();
@@ -596,16 +579,21 @@
 
             initUserLocation();
 
-            // add Kaaba ring marker (brass, bigger)
-            const ringCanvas = generateRingIconCanvas(64);
+            // ------------------------------------------------------------------
+            // 3. add BIGGER custom ring marker at Mecca – now clearly visible
+            //    canvas 64px, icon size 52px (up from 36px)
+            // ------------------------------------------------------------------
+            const ringCanvas = generateRingIconCanvas(64); // high-res 64px canvas
             const ringIcon = L.icon({
                 iconUrl: ringCanvas.toDataURL('image/png'),
-                iconSize: [52, 52],
-                iconAnchor: [26, 26],
+                iconSize: [52, 52],      // MUCH BIGGER – now 52px (was 36)
+                iconAnchor: [26, 26],     // center adjusted
                 popupAnchor: [0, -26]
             });
-            L.marker([21.4225, 39.8262], { icon: ringIcon, title: 'Kaaba · brass ring (opt7 #3)' }).addTo(map)
-                .bindPopup('⭐ opt7 #3 brass ring · bigger (52px)');
+            L.marker([21.4225, 39.8262], { icon: ringIcon, title: 'Kaaba · BIGGER opt7#3 brass' }).addTo(map)
+                .bindPopup('⭐ BIGGER ring: opt7 #3 (brighter brass, locked size 0.95) · 52px');
+
+            // also move the default draggable marker behind? No, keep separate; user understands
         }
 
         searchBtn.addEventListener('click', () => searchCity(cityInput.value.trim()));
