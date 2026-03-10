@@ -275,6 +275,12 @@
             text-align: left;            /* left aligned, not right */
             border-top: none;            /* remove any extra border */
         }
+        
+        /* Custom marker style - hides default leaflet marker */
+        .custom-marker {
+            background: none;
+            border: none;
+        }
     </style>
 </head>
 <body>
@@ -559,7 +565,24 @@
             L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
                 attribution: '© OpenStreetMap'
             }).addTo(map);
-            marker = L.marker([lat, lng], { draggable: true }).addTo(map);
+            
+            // Custom Spring Green marker icon (#00ff7f)
+            const greenIcon = L.divIcon({
+                className: 'custom-marker',
+                html: `<svg width="32" height="45" viewBox="0 0 24 36" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M12 0C7.03 0 3 4.03 3 9c0 6.75 9 18 9 18s9-11.25 9-18c0-4.97-4.03-9-9-9z" 
+                          fill="#00ff7f" stroke="#004d26" stroke-width="0.5"/>
+                    <circle cx="12" cy="9" r="3.5" fill="#ffffff" opacity="0.9"/>
+                </svg>`,
+                iconSize: [32, 45],
+                iconAnchor: [16, 45],
+                popupAnchor: [0, -45]
+            });
+            
+            marker = L.marker([lat, lng], { 
+                draggable: true,
+                icon: greenIcon 
+            }).addTo(map);
 
             marker.on('dragend', async e => {
                 const p = e.target.getLatLng();
