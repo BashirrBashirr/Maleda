@@ -90,7 +90,7 @@
         #map {
             width: 100%;
             height: 100%;
-            background: #d6dee5; /* Solid background color matching tiles */
+            background: #e1e8ed;
         }
         .map-overlay {
             position: absolute;
@@ -426,7 +426,7 @@
         // ------------------------------------------------------------------
         let lat = 21.4225, lng = 39.8262;
         let locationTimezone = 'Asia/Riyadh';
-        let map, marker, ringMarker;
+        let map, marker;
 
         function getCalcParams(name) {
             switch (name) {
@@ -565,39 +565,16 @@
         }
 
         function initMap() {
-            // Ensure map container exists and is ready
-            const mapElement = document.getElementById('map');
-            if (!mapElement) return;
-
-            // Initialize map with better error handling
-            map = L.map('map', { 
-                zoomControl: false,
-                fadeAnimation: true,
-                zoomAnimation: true,
-                markerZoomAnimation: true
-            }).setView([21.4225, 39.8262], 6);
-
-            // Add tile layer with retry on error
-            const tileLayer = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: '© OpenStreetMap',
-                maxZoom: 19,
-                minZoom: 2,
-                keepBuffer: 4,
-                updateWhenIdle: true,
-                reuseTiles: true
+            // Initialize map with OpenStreetMap tiles (exact same as example)
+            map = L.map('map', { zoomControl: false }).setView([0, 0], 2); // Temporary view, will be updated
+            
+            // EXACT TILE LAYER from your example
+            L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap'
             }).addTo(map);
 
-            // Handle tile loading errors
-            tileLayer.on('tileerror', function(error) {
-                console.log('Tile failed to load, but map continues');
-            });
-
-            // Force a redraw after a short delay to ensure proper rendering
-            setTimeout(() => {
-                map.invalidateSize();
-            }, 100);
-
-            // --- HIGHEST QUALITY RED MARKER ---
+            // --- HIGHEST QUALITY RED MARKER (exact same shape, now red) ---
+            // Using 2x resolution for retina displays and better quality
             const redIcon = L.icon({
                 iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
                 shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
@@ -622,45 +599,29 @@
                 await onLocationChange(e.latlng.lat, e.latlng.lng, null);
             });
 
+            // Get user location on start
+            initUserLocation();
+
             // ------------------------------------------------------------------
-            // 3. add BIGGER custom ring marker at Mecca – fixed rendering
+            // 3. add BIGGER custom ring marker at Mecca – now clearly visible
+            //    canvas 64px, icon size 52px (up from 36px)
             // ------------------------------------------------------------------
             const ringCanvas = generateRingIconCanvas(64);
             const ringIcon = L.icon({
                 iconUrl: ringCanvas.toDataURL('image/png'),
                 iconSize: [52, 52],
                 iconAnchor: [26, 26],
-                popupAnchor: [0, -26],
-                className: 'ring-marker'
+                popupAnchor: [0, -26]
             });
-            
-            ringMarker = L.marker([21.4225, 39.8262], { 
-                icon: ringIcon, 
-                title: 'Kaaba · BIGGER opt7#3 brass',
-                zIndexOffset: 1000
-            }).addTo(map)
+            L.marker([21.4225, 39.8262], { icon: ringIcon, title: 'Kaaba · BIGGER opt7#3 brass' }).addTo(map)
                 .bindPopup('Al-Kaʿbah al-Musharrafa');
-
-            // Get user location on start
-            initUserLocation();
-
-            // Handle window resize
-            window.addEventListener('resize', () => {
-                map.invalidateSize();
-            });
         }
 
         searchBtn.addEventListener('click', () => searchCity(cityInput.value.trim()));
         cityInput.addEventListener('keypress', e => { if (e.key === 'Enter') searchCity(cityInput.value.trim()); });
         methodSelect.addEventListener('change', refreshTimes);
         setInterval(refreshTimes, 60000);
-        
-        // Ensure map initializes after DOM is fully loaded
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', initMap);
-        } else {
-            initMap();
-        }
+        window.addEventListener('load', initMap);
     })();
     </script>
 </body>
