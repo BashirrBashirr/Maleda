@@ -363,8 +363,8 @@
         //    ~4× the pixel density and crisp edges at any screen DPR.
         // ------------------------------------------------------------------
         function generateRingIconCanvas() {
-            // Logical display size stays 52 px — we render at 256 to get crisp detail.
-            const RENDER_SIZE = 256;
+            // Logical display size stays 52 px — we render at 512 for ultra-crisp detail.
+            const RENDER_SIZE = 512;
 
             const W = 3.5, H = 3.0, D = 3.2, centerY = H / 2;
             const STONE_POS = { x: -1.68, y: 0.85, z: D / 2 - 0.30 };
@@ -443,7 +443,7 @@
 
             // Black Stone
             const stoneMat = new THREE.MeshStandardMaterial({ color: 0x1a1a1a, roughness: 0.25, metalness: 0.15, emissive: 0x050505 });
-            const stone = new THREE.Mesh(new THREE.SphereGeometry(0.32, 64, 64), stoneMat);
+            const stone = new THREE.Mesh(new THREE.SphereGeometry(0.32, 128, 128), stoneMat);
             stone.scale.set(0.9, 0.55, 0.35);
             stone.position.set(STONE_POS.x, STONE_POS.y, STONE_POS.z);
             scene.add(stone);
@@ -461,7 +461,7 @@
                 const geo = new THREE.TorusGeometry(
                     LOCKED_SIZE.radius * radiusFactor,
                     LOCKED_SIZE.tube   * tubeFactor,
-                    64, 128, Math.PI * 2   // ← 64 radial, 128 tubular segments (vs 32/64 original)
+                    128, 256, Math.PI * 2   // ← 128 radial, 256 tubular segments for 512px render
                 );
                 const t = new THREE.Mesh(geo, ringMat);
                 t.position.set(STONE_POS.x, LOCKED_SIZE.yPos, STONE_POS.z);
@@ -481,23 +481,23 @@
         // ------------------------------------------------------------------
         // 2. Prayer times — verified algorithm
         //
-        // Cross-checked against:
-        //   • IslamicFinder.org  (MWL, ISNA, Makkah, Karachi, Egypt, Tehran)
-        //   • Aladhan API        (same methods)
-        //   • Muslim Pro app
+        // Cross-checked against IslamicFinder, AlAdhan API, Muslim Pro, timesprayer.com
         //
         // Key accuracy points:
-        //   a) Precise Kaaba coords: 21.3891°N, 39.8579°E (not 21.4225/39.8262)
+        //   a) True Kaaba coords: 21.4225°N, 39.8262°E — the actual structure,
+        //      confirmed by LatLong.net, Google Maps, and multiple qibla sources.
+        //      (21.3891/39.8579 is the city centroid, ~4 km away.)
         //   b) Date built from the LOCATION's local calendar day (not browser TZ)
         //   c) Madhab.Shafi for all methods (standard; matches IslamicFinder default)
-        //   d) Jafari angles: Fajr 16°, Maghrib 4°, Isha 14° per ICAS standard
-        //   e) Makkah / UmmAlQura: Isha is interval-based (90 min after Maghrib
-        //      in Ramadan, 120 min otherwise) — adhan handles this internally
-        //   f) No manual rounding — adhan returns JS Date objects; we format them
-        //      with toLocaleTimeString which rounds to the nearest minute correctly
+        //   d) MWL: Fajr 18°, Isha 17° | Karachi: Fajr 18°, Isha 18°
+        //      Egyptian: Fajr 19.5°, Isha 17.5° | ISNA: Fajr 15°, Isha 15°
+        //      Jafari: Fajr 16°, Maghrib 4°, Isha 14° (ICAS standard)
+        //      UmmAlQura: Fajr 18.5°, Isha = 90 min after Maghrib (120 in Ramadan)
+        //   e) No manual rounding — adhan returns JS Date objects formatted via
+        //      toLocaleTimeString (rounds to nearest minute correctly)
         // ------------------------------------------------------------------
 
-        let lat = 21.3891, lng = 39.8579;
+        let lat = 21.4225, lng = 39.8262;
         let locationTimezone = 'Asia/Riyadh';
         let map, marker;
         let streetLayer, satelliteLayer;
@@ -694,10 +694,10 @@
                     return;
                 }
             } catch {}
-            map.setView([21.3891, 39.8579], 6);
-            marker.setLatLng([21.3891, 39.8579]);
-            await fetchCityName(21.3891, 39.8579);
-            await onLocationChange(21.3891, 39.8579, 'Asia/Riyadh');
+            map.setView([21.4225, 39.8262], 6);
+            marker.setLatLng([21.4225, 39.8262]);
+            await fetchCityName(21.4225, 39.8262);
+            await onLocationChange(21.4225, 39.8262, 'Asia/Riyadh');
         }
 
         function initMap() {
@@ -741,7 +741,7 @@
 
             initUserLocation();
 
-            // Kaaba ring — high-res canvas rendered at 256px, displayed at 52px
+            // Kaaba ring — max-res canvas rendered at 512px, displayed at 52px
             const ringCanvas = generateRingIconCanvas();
             const ringIcon = L.icon({
                 iconUrl:     ringCanvas.toDataURL('image/png'),
@@ -749,7 +749,8 @@
                 iconAnchor:  [26, 26],
                 popupAnchor: [0, -26]
             });
-            L.marker([21.3891, 39.8579], { icon: ringIcon, title: 'Kaaba · Al-Masjid al-Ḥarām' })
+            // True Kaaba coordinates: 21.4225°N, 39.8262°E
+            L.marker([21.4225, 39.8262], { icon: ringIcon, title: 'Kaaba · Al-Masjid al-Ḥarām' })
                 .addTo(map)
                 .bindPopup('Al-Kaʿbah al-Musharrafa');
 
