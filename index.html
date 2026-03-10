@@ -35,19 +35,18 @@
             color: #0b2b3a;
             letter-spacing: -0.3px;
         }
-        /* removed the moon emoji, kept only the word */
         .top h2 span {
-            display: none;          /* ☾ completely gone */
+            display: none;      /* emoji removed */
         }
 
-        /* --- method selector: arrow pulled hard left, no extra space --- */
+        /* --- METHOD SELECTOR: extra separation between "Method" and white box --- */
         .method-wrap {
             background: #f1f4f7;
             border-radius: 40px;
-            padding: 0.3rem 0.3rem 0.3rem 0rem;     /* left padding zero */
+            padding: 0.3rem 0.3rem 0.3rem 0rem;    /* zero left padding */
             display: flex;
             align-items: center;
-            gap: 0px;                               /* no gap between text and select */
+            gap: 12px;                               /* ← increased gap: now 12px between span and select */
             border: 1px solid #dde3e9;
             box-shadow: 0 2px 6px rgba(0,0,0,0.02);
         }
@@ -56,8 +55,8 @@
             font-weight: 500;
             font-size: 0.85rem;
             letter-spacing: 0.2px;
-            padding-left: 12px;                      /* slight breathing for "Method" */
-            padding-right: 2px;                       /* reduce right padding to near zero */
+            padding-left: 14px;                      /* "Method" indentation */
+            padding-right: 0px;                       
             white-space: nowrap;
         }
         .method-wrap select {
@@ -66,15 +65,24 @@
             border-radius: 30px;
             font-size: 0.9rem;
             font-weight: 500;
-            /* left padding extremely small – arrow now sits almost directly after "Method" */
-            padding: 0.45rem 1.2rem 0.45rem 0.15rem;  /* left tiny, arrow leftmost */
+            /* left padding gives space between edge of white box and "MWL" text */
+            padding: 0.45rem 2rem 0.45rem 1rem;      /* extra right padding for arrow, left comfortable */
             outline: none;
             color: #103745;
             cursor: pointer;
             box-shadow: 0 1px 3px rgba(0,0,0,0.02);
             border: 1px solid #d0dae3;
-            text-indent: 0.02rem;                    /* keep text readable */
+            
+            /* custom arrow (black) */
+            appearance: none;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23103745' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'/></svg>");
+            background-repeat: no-repeat;
+            background-position: right 0.8rem center;
+            background-size: 16px;
         }
+        .method-wrap select::-ms-expand { display: none; }
 
         .main {
             display: flex;
@@ -210,7 +218,6 @@
             padding-top: 1.5rem;
         }
 
-        /* both rows now share identical typography */
         .hijri-row, .greg-row {
             display: flex;
             justify-content: space-between;
@@ -219,7 +226,7 @@
             border-bottom: 1px solid #f0f5fa;
         }
 
-        /* left labels: all same */
+        /* left labels */
         .hijri-row span:first-child, .greg-row span:first-child {
             font-weight: 460;
             color: #2f5b6f;
@@ -227,28 +234,28 @@
             letter-spacing: -0.1px;
         }
 
-        /* Hijri value (like 24 Ramadan 1445) – exactly the same as left part */
+        /* Hijri value */
         .hijri-row span:last-child {
             font-family: 'Inter', sans-serif;
             font-size: 1.1rem;
-            font-weight: 460;               /* match left weight */
-            color: #2f5b6f;                  /* same muted blue-grey */
+            font-weight: 460;
+            color: #2f5b6f;
             background: none;
             border: none;
             padding: 0;
             letter-spacing: -0.1px;
         }
 
-        /* GMT offset – now exactly the same font as Hijri value (identical style) */
+        /* GMT offset – pixel‑perfect match of hijri style (no bold, no black) */
         .greg-row span:last-child {
             font-family: 'Inter', sans-serif;
             font-size: 1.1rem;
-            font-weight: 460;                 /* changed from 540 to match hijri */
-            color: #2f5b6f;                    /* same colour, not the previous blue */
+            font-weight: 460;
+            color: #2f5b6f;
             background: none;
             border: none;
             padding: 0;
-            letter-spacing: -0.1px;            /* same as hijri */
+            letter-spacing: -0.1px;
         }
 
         .error-note {
@@ -274,7 +281,7 @@
 </head>
 <body>
     <div class="top">
-        <h2><span></span>Salah Radar</h2>   <!-- emoji span hidden via display:none -->
+        <h2><span></span>Salah Radar</h2>   <!-- no emoji -->
         <div class="method-wrap">
             <span>Method</span>
             <select id="methodSelect">
@@ -301,7 +308,7 @@
         <div class="times-panel">
             <div class="place-row">
                 <input type="text" id="cityInput" placeholder="City or place" value="Mecca">
-                <button id="searchBtn">Find</button>
+                <button id="searchBtn">Search</button>
             </div>
 
             <div class="prayer-list">
