@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>salaat · map — custom ring marker (opt7 #3) · BIGGER visible</title>
+    <title>salaat · map — custom ring marker · satellite/street (green)</title>
     <!-- Leaflet & fonts -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -90,7 +90,7 @@
         #map {
             width: 100%;
             height: 100%;
-            background: #e1e8ed;
+            background: #a5bfdd;  /* solid blue-gray while tiles load — no white lines */
         }
         .map-overlay {
             position: absolute;
@@ -111,6 +111,51 @@
         .map-overlay span {
             font-family: 'SF Mono', monospace;
             font-weight: 500;
+        }
+
+        /* ----- green layer control (satellite / street) ----- */
+        .leaflet-control-layers {
+            border-radius: 30px !important;
+            border: 1px solid #b7d0b0 !important;
+            background: #f0f7ec !important;
+            box-shadow: 0 4px 12px rgba(40,70,40,0.15) !important;
+            padding: 4px 6px !important;
+        }
+        .leaflet-control-layers-toggle {
+            width: 40px !important;
+            height: 40px !important;
+            background-size: 22px 22px !important;
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="%23336633" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>') !important;
+            background-color: #dff0d8 !important;
+            border-radius: 50% !important;
+        }
+        .leaflet-control-layers-expanded {
+            background: #f0f7ec !important;
+            border: 1px solid #9dc18a !important;
+            border-radius: 28px !important;
+            padding: 12px 18px !important;
+            font-weight: 500 !important;
+            color: #1f4a1f !important;
+        }
+        .leaflet-control-layers-expanded label {
+            color: #1f4a1f !important;
+            font-size: 0.9rem !important;
+        }
+        .leaflet-control-layers-expanded input[type="radio"] {
+            accent-color: #2e7d32 !important;
+            width: 16px;
+            height: 16px;
+            margin-right: 8px;
+        }
+        .leaflet-control-layers-expanded span {
+            font-weight: 500;
+            color: #1a4a1a;
+        }
+        /* keep other controls subtle */
+        .leaflet-control-zoom a {
+            background: #f0f7ec !important;
+            color: #1f4a1f !important;
+            border: 1px solid #b7d0b0 !important;
         }
 
         .times-panel {
@@ -291,7 +336,7 @@
     (function() {
         // ------------------------------------------------------------------
         // 1. render EXACT Kaaba ring (opt7 #3, brighter brass) – LARGER VISIBLE
-        //    Kept exact 3d proportions but output canvas 64px, icon size 52px (much bigger)
+        //    Kept exact 3d proportions but output canvas 64px, icon size 52px
         // ------------------------------------------------------------------
         function generateRingIconCanvas(size = 64) {
             // exact kaaba & door dimensions (same as original)
@@ -426,7 +471,7 @@
         // ------------------------------------------------------------------
         let lat = 21.4225, lng = 39.8262;
         let locationTimezone = 'Asia/Riyadh';
-        let map, marker;
+        let map, marker, baseLayers;
 
         function getCalcParams(name) {
             switch (name) {
@@ -565,16 +610,31 @@
         }
 
         function initMap() {
-            // Initialize map with OpenStreetMap tiles (exact same as example)
-            map = L.map('map', { zoomControl: false }).setView([0, 0], 2); // Temporary view, will be updated
-            
-            // EXACT TILE LAYER from your example
-            L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: '© OpenStreetMap'
-            }).addTo(map);
+            // Solid background prevents white flashes / grid lines
+            map = L.map('map', { zoomControl: true }).setView([0, 0], 2);
 
-            // --- HIGHEST QUALITY RED MARKER (exact same shape, now red) ---
-            // Using 2x resolution for retina displays and better quality
+            // ---------- DEFINE TILE LAYERS (Satellite / Street) ----------
+            const streetLayer = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap',
+                bgColor: '#a5bfdd'   // hint for renderer
+            });
+
+            const satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+                attribution: 'Tiles © Esri — Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community',
+                bgColor: '#0a1f2a'
+            });
+
+            // default street
+            streetLayer.addTo(map);
+
+            // layer control with GREEN theme (CSS handles the green)
+            baseLayers = {
+                "Street (OSM)": streetLayer,
+                "Satellite (Esri)": satelliteLayer
+            };
+            L.control.layers(baseLayers, null, { position: 'topright' }).addTo(map);
+
+            // --- HIGHEST QUALITY RED MARKER ---
             const redIcon = L.icon({
                 iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
                 shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
@@ -603,8 +663,8 @@
             initUserLocation();
 
             // ------------------------------------------------------------------
-            // 3. add BIGGER custom ring marker at Mecca – now clearly visible
-            //    canvas 64px, icon size 52px (up from 36px)
+            // 3. add BIGGER custom ring marker at Mecca – clearly visible
+            //    canvas 64px, icon size 52px
             // ------------------------------------------------------------------
             const ringCanvas = generateRingIconCanvas(64);
             const ringIcon = L.icon({
