@@ -265,17 +265,15 @@
             margin-top: 0.3rem;
             font-weight: 440;
         }
-        div[style*="margin-top: 0.8rem;"] {
-            font-size: 0.7rem !important;
-            color: #9bb7c5 !important;
-            letter-spacing: 0.1px;
-            text-align: right;
-            margin-top: 1rem !important;
+        /* --- hint line: now moved to left, aligned with other rows --- */
+        .hint-row {
+            margin-top: 0.8rem;
+            font-size: 0.7rem;
+            color: #8d988b;
             font-weight: 390;
-        }
-        .tz-loading {
-            font-size: 0.65rem;
-            color: #b0c7d2;
+            letter-spacing: 0.1px;
+            text-align: left;            /* left aligned, not right */
+            border-top: none;            /* remove any extra border */
         }
     </style>
 </head>
@@ -332,7 +330,8 @@
             </div>
 
             <div id="errorMsg" class="error-note"></div>
-            <div style="margin-top: 0.8rem; font-size: 0.7rem; color:#8d988b;">click map · city name appears</div>
+            <!-- moved hint to the left, directly below tz row, with left alignment -->
+            <div class="hint-row">click map · city name appears</div>
         </div>
     </div>
 
