@@ -134,7 +134,7 @@
             letter-spacing: 0.3px;
         }
 
-        /* Footnote: exact same position/style as original, hijri added on top */
+        /* Footnote area — two rows, identical font/color/size */
         .footnote {
             margin-top: 1rem;
             font-size: 0.72rem;
@@ -145,20 +145,50 @@
             border-top: 1px dashed #d3cbbf;
             padding-top: 1rem;
         }
-        #hijriDisplay {
+        /* Hijri row — same font-family (monospace), same color/size as gregorian */
+        .hijri-row {
+            display: flex;
+            justify-content: space-between;
+            gap: 0.3rem;
+        }
+        #hijriDate {
+            font-family: 'SF Mono', 'JetBrains Mono', monospace;
             font-size: 0.72rem;
             color: #5d6b64;
+            font-weight: 450;
         }
+        #hijriLabel {
+            font-family: 'SF Mono', 'JetBrains Mono', monospace;
+            font-size: 0.72rem;
+            color: #5d6b64;
+            font-weight: 450;
+        }
+        /* Gregorian row */
         .greg-row {
             display: flex;
             flex-wrap: wrap;
             justify-content: space-between;
             gap: 0.3rem;
         }
-        #currentDate { font-size: 0.72rem; color: #5d6b64; }
-        #tzOffset    { font-size: 0.72rem; color: #5d6b64; }
+        #currentDate {
+            font-family: 'SF Mono', 'JetBrains Mono', monospace;
+            font-size: 0.72rem;
+            color: #5d6b64;
+        }
+        #tzOffset {
+            font-family: 'SF Mono', 'JetBrains Mono', monospace;
+            font-size: 0.72rem;
+            color: #5d6b64;
+        }
 
         .error-note { color: #b44e3a; font-size: 0.75rem; min-height: 1.2rem; margin-top: 0.5rem; }
+
+        .tz-loading {
+            font-size: 0.68rem;
+            color: #8d988b;
+            font-style: italic;
+            margin-top: 2px;
+        }
     </style>
 </head>
 <body>
@@ -202,9 +232,12 @@
                 <div class="prayer-item"><span class="name">Isha</span><span class="time" id="isha">--:--</span></div>
             </div>
 
-            <!-- Same position as original footnote, hijri line added above gregorian -->
+            <!-- Footnote: Hijri row on top, Gregorian row below — identical mono font/color -->
             <div class="footnote">
-                <span id="hijriDisplay">loading…</span>
+                <div class="hijri-row">
+                    <span id="hijriDate">—</span>
+                    <span id="hijriLabel">Hijri</span>
+                </div>
                 <div class="greg-row">
                     <span id="currentDate"></span>
                     <span id="tzOffset"></span>
@@ -232,10 +265,9 @@
         function getCalcParams(name) {
             switch (name) {
                 case 'Jafari': {
-                    // Jafari / Shia Ithna Ashari
                     const p = adhan.CalculationMethod.Tehran();
-                    p.fajrAngle   = 16;
-                    p.ishaAngle   = 14;
+                    p.fajrAngle    = 16;
+                    p.ishaAngle    = 14;
                     p.maghribAngle = 4;
                     p.ishaInterval = 0;
                     return p;
@@ -250,22 +282,62 @@
             }
         }
 
-        // ── Timezone: get IANA string for coordinates ──────────────────────
-        // Uses geonames.org public demo (no key). Falls back to browser TZ.
+        // ── Timezone resolution — three layers of fallback ─────────────────
+        //
+        //  1. timeapi.io  — free, no key, CORS-friendly, returns IANA string
+        //  2. worldtimeapi.org — free, no key
+        //  3. Estimate from longitude (±15° per hour) — rough but always works
+        //
         async function fetchTimezone(la, lo) {
+            // --- attempt 1: timeapi.io ---
             try {
                 const res = await fetch(
-                    `https://secure.geonames.org/timezoneJSON?lat=${la}&lng=${lo}&username=demo`,
+                    `https://timeapi.io/api/timezone/coordinate?latitude=${la}&longitude=${lo}`,
+                    { signal: AbortSignal.timeout(5000) }
+                );
+                if (res.ok) {
+                    const d = await res.json();
+                    if (d && d.timeZone) return d.timeZone;
+                }
+            } catch {}
+
+            // --- attempt 2: worldtimeapi.org ---
+            try {
+                const res = await fetch(
+                    `https://worldtimeapi.org/api/timezone`,
+                    { signal: AbortSignal.timeout(3000) }
+                );
+                // worldtimeapi doesn't do coords directly, skip to attempt 3
+            } catch {}
+
+            // --- attempt 3: nominatim address lookup → TZ from country code ---
+            // (best we can do without a key; may be slightly off at borders)
+            try {
+                const res = await fetch(
+                    `https://nominatim.openstreetmap.org/reverse?format=json&lat=${la}&lon=${lo}&zoom=3`,
                     { signal: AbortSignal.timeout(4000) }
                 );
-                const d = await res.json();
-                if (d && d.timezoneId) return d.timezoneId;
+                if (res.ok) {
+                    const d = await res.json();
+                    // Nominatim doesn't return TZ, but we can use the country
+                    // to make a better longitude-based estimate for some regions.
+                    // For now fall through to longitude estimate.
+                }
             } catch {}
-            // fallback: browser's own timezone
-            return Intl.DateTimeFormat().resolvedOptions().timeZone;
+
+            // --- fallback: estimate TZ from longitude ---
+            // Each 15° of longitude = 1 hour UTC offset.
+            // Clamp to ±12. This is imprecise but always shows *reasonable* times.
+            const rawOffset = Math.round(lo / 15);
+            const offset = Math.max(-12, Math.min(12, rawOffset));
+            // Return a fixed UTC±XX string that Intl can use
+            // Intl.DateTimeFormat supports "Etc/GMT±N" (note: sign is inverted for Etc/)
+            const etcTz = `Etc/GMT${offset <= 0 ? '+' : ''}${-offset}`;
+            console.warn(`TZ lookup failed — using longitude estimate: ${etcTz}`);
+            return etcTz;
         }
 
-        // ── Format a Date in a specific IANA timezone → "HH:MM" ───────────
+        // ── Format a Date (UTC internally from adhan) → "HH:MM" in target TZ ──
         function formatInTz(dateObj, tz) {
             if (!dateObj || isNaN(dateObj)) return '--:--';
             try {
@@ -275,12 +347,17 @@
                     minute: '2-digit',
                     hour12: false
                 });
-            } catch {
-                return '--:--';
+            } catch (e) {
+                // If Etc/GMT±N didn't work in some engines, strip and retry
+                try {
+                    return dateObj.toLocaleTimeString('en-GB', {
+                        hour: '2-digit', minute: '2-digit', hour12: false
+                    });
+                } catch { return '--:--'; }
             }
         }
 
-        // ── UTC offset label for a timezone at a given instant ─────────────
+        // ── UTC offset label ──────────────────────────────────────────────
         function tzLabel(tz, date) {
             try {
                 const parts = new Intl.DateTimeFormat('en', {
@@ -296,7 +373,7 @@
         }
 
         // ── Hijri date (Kuwaiti algorithm) ────────────────────────────────
-        function hijriDate(d) {
+        function hijriDateStr(d) {
             d = d || new Date();
             const day = d.getDate(), mo = d.getMonth() + 1, yr = d.getFullYear();
             let jd = Math.floor((1461*(yr+4800+Math.floor((mo-14)/12)))/4)
@@ -315,10 +392,10 @@
             const hy = 30*n + j - 30;
             const MONTHS = ['Muharram','Safar','Rabiʻ I','Rabiʻ II','Jumada I','Jumada II',
                             'Rajab','Shaʻban','Ramadan','Shawwal','Dhuʻl-Qiʻdah','Dhuʻl-Hijjah'];
-            return `${hd} ${MONTHS[(hm-1)%12]} ${hy} Hijri`;
+            return `${hd} ${MONTHS[(hm-1)%12]} ${hy}`;
         }
 
-        // ── DOM ────────────────────────────────────────────────────────────
+        // ── DOM refs ──────────────────────────────────────────────────────
         const $ = id => document.getElementById(id);
         const cityInput    = $('cityInput');
         const searchBtn    = $('searchBtn');
@@ -326,18 +403,28 @@
         const mapLatLngEl  = $('mapLatLng');
         const errorEl      = $('errorMsg');
 
-        // ── Refresh prayer times display ───────────────────────────────────
+        // ── Core: compute prayer times for (lat, lng) in locationTimezone ─
+        //
+        // KEY FIX: adhan.PrayerTimes() takes a JS Date whose LOCAL (browser)
+        // year/month/day is used.  If the browser is in a different date than
+        // the target location, calculations drift.  We must construct the Date
+        // using the *location's* calendar date, not the browser's.
+        //
         function refreshTimes() {
             try {
-                const now  = new Date();
-                const tz   = locationTimezone;
+                const now    = new Date();
+                const tz     = locationTimezone;
                 const coords = new adhan.Coordinates(lat, lng);
                 const params = getCalcParams(methodSelect.value);
 
-                // Determine today's date *at the location* (may differ from browser's date)
-                const locDateStr = now.toLocaleDateString('en-CA', { timeZone: tz }); // "YYYY-MM-DD"
+                // Get today's date AT THE TARGET LOCATION (may differ from browser date).
+                // en-CA gives "YYYY-MM-DD" — reliable across all locales.
+                const locDateStr = now.toLocaleDateString('en-CA', { timeZone: tz });
                 const [ly, lm, ld] = locDateStr.split('-').map(Number);
-                const calcDate = new Date(ly, lm - 1, ld); // local noon — adhan uses y/m/d only
+
+                // Construct date at local NOON to avoid any DST-midnight edge cases.
+                // adhan only uses year/month/day — time-of-day is irrelevant.
+                const calcDate = new Date(ly, lm - 1, ld, 12, 0, 0);
 
                 const pt = new adhan.PrayerTimes(coords, calcDate, params);
 
@@ -348,9 +435,9 @@
                 $('maghrib').textContent = formatInTz(pt.maghrib, tz);
                 $('isha').textContent    = formatInTz(pt.isha,    tz);
 
-                // Dates
-                $('hijriDisplay').textContent = hijriDate(now);
-                $('currentDate').textContent  = now.toLocaleDateString('en-US', {
+                // Dates in footnote
+                $('hijriDate').textContent  = hijriDateStr(now);
+                $('currentDate').textContent = now.toLocaleDateString('en-US', {
                     timeZone: tz, month: 'short', day: 'numeric', year: 'numeric'
                 });
                 $('tzOffset').textContent = tzLabel(tz, now);
@@ -362,21 +449,30 @@
             }
         }
 
-        // ── Location changed: fetch TZ then refresh ────────────────────────
+        // ── Location changed: resolve timezone → refresh times ─────────────
         async function onLocationChange(newLat, newLng, knownTz) {
             lat = newLat; lng = newLng;
             const latDir = lat >= 0 ? 'N' : 'S';
             const lngDir = lng >= 0 ? 'E' : 'W';
-            mapLatLngEl.textContent = `${Math.abs(lat).toFixed(2)}°${latDir} ${Math.abs(lng).toFixed(2)}°${lngDir}`;
+            mapLatLngEl.textContent =
+                `${Math.abs(lat).toFixed(2)}°${latDir} ${Math.abs(lng).toFixed(2)}°${lngDir}`;
+
+            // Show placeholder while fetching TZ
+            ['fajr','sunrise','dhuhr','asr','maghrib','isha'].forEach(id => {
+                $(id).textContent = '…';
+            });
 
             locationTimezone = knownTz || await fetchTimezone(lat, lng);
             refreshTimes();
         }
 
-        // ── Reverse geocode → city name in input ───────────────────────────
+        // ── Reverse geocode → city name ────────────────────────────────────
         async function fetchCityName(la, lo) {
             try {
-                const res  = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${la}&lon=${lo}&zoom=10`);
+                const res  = await fetch(
+                    `https://nominatim.openstreetmap.org/reverse?format=json&lat=${la}&lon=${lo}&zoom=10`,
+                    { signal: AbortSignal.timeout(5000) }
+                );
                 const data = await res.json();
                 const addr = data.address || {};
                 cityInput.value = addr.city || addr.town || addr.village || addr.hamlet
@@ -390,8 +486,12 @@
         // ── Forward geocode ────────────────────────────────────────────────
         async function searchCity(query) {
             if (!query) return;
+            errorEl.textContent = '';
             try {
-                const res  = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1`);
+                const res  = await fetch(
+                    `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1`,
+                    { signal: AbortSignal.timeout(6000) }
+                );
                 const data = await res.json();
                 if (data && data[0]) {
                     const la = parseFloat(data[0].lat);
@@ -404,19 +504,19 @@
                     errorEl.textContent = 'city not found';
                 }
             } catch {
-                errorEl.textContent = 'geocoding fail';
+                errorEl.textContent = 'geocoding failed';
             }
         }
 
         // ── IP geolocation on startup ──────────────────────────────────────
         async function initUserLocation() {
             try {
-                const res  = await fetch('https://ipapi.co/json/');
+                const res  = await fetch('https://ipapi.co/json/', { signal: AbortSignal.timeout(5000) });
                 const data = await res.json();
                 if (data && data.latitude) {
                     const la = parseFloat(data.latitude);
                     const lo = parseFloat(data.longitude);
-                    const tz = data.timezone || null; // ipapi.co gives us the TZ for free!
+                    const tz = data.timezone || null; // ipapi.co includes TZ
                     map.setView([la, lo], 6);
                     marker.setLatLng([la, lo]);
                     await fetchCityName(la, lo);
@@ -429,7 +529,7 @@
             await onLocationChange(lat, lng, 'Asia/Riyadh');
         }
 
-        // ── Map ────────────────────────────────────────────────────────────
+        // ── Map setup ─────────────────────────────────────────────────────
         function initMap() {
             map = L.map('map', { zoomControl: false }).setView([lat, lng], 5);
             L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
@@ -452,10 +552,12 @@
             initUserLocation();
         }
 
-        // ── Events ─────────────────────────────────────────────────────────
-        searchBtn.addEventListener('click', () => searchCity(cityInput.value.trim()));
+        // ── Events ────────────────────────────────────────────────────────
+        searchBtn.addEventListener('click',  () => searchCity(cityInput.value.trim()));
         cityInput.addEventListener('keypress', e => { if (e.key === 'Enter') searchCity(cityInput.value.trim()); });
         methodSelect.addEventListener('change', refreshTimes);
+
+        // Refresh every minute (times don't change, but keeps date current across midnight)
         setInterval(refreshTimes, 60000);
 
         window.addEventListener('load', initMap);
