@@ -649,68 +649,116 @@
         var streetLayer, satelliteLayer;
 
         // ╔══════════════════════════════════════════════════════════════════╗
-        // ║  FIX 2 — getCalcParams() rewritten                             ║
+        // ║  getCalcParams() — fully audited v3                            ║
         // ║                                                                  ║
-        // ║  Root cause of timing errors:                                   ║
+        // ║  BUGS FIXED IN THIS VERSION:                                    ║
         // ║                                                                  ║
-        // ║  MWL method:     Fajr=18°, Isha=17°                            ║
-        // ║  Kemenag (ID):   Fajr=20°, Isha=18°                            ║
+        // ║  BUG A — Jafari maghribAngle was 4° but Tehran() base is 4.5°. ║
+        // ║    The override to 4° is the correct Jafari standard (eastern  ║
+        // ║    redness angle), and IS correctly overriding the base 4.5°.  ║
+        // ║    However madhab=Shafi was applied globally AFTER the switch,  ║
+        // ║    overwriting any Shia-specific madhab. Jafari uses shadow    ║
+        // ║    factor 1 which equals Shafi — coincidentally OK — but now   ║
+        // ║    we skip global madhab override for Jafari/Tehran explicitly. ║
         // ║                                                                  ║
-        // ║  The 2° higher Fajr angle means the sun must be 2° deeper       ║
-        // ║  below the horizon before Fajr is called → Fajr is EARLIER.    ║
-        // ║  This fixed the +8 min Fajr error.                              ║
+        // ║  BUG B — Tehran standalone: applying madhab=Shafi is wrong     ║
+        // ║    semantically (Tehran is Shia), even though numerically the   ║
+        // ║    Asr shadow factor is the same (1x). Now exempted.            ║
         // ║                                                                  ║
-        // ║  The 1° higher Isha angle pushes Isha LATER.                   ║
-        // ║  This fixed the -4 min Isha error.                              ║
+        // ║  BUG C — Jafari redundant ishaInterval=0 and wrong base:       ║
+        // ║    Tehran() already sets ishaInterval=0. Cleaned up.            ║
+        // ║    Using adhan.CalculationMethod.Other() as Jafari base avoids  ║
+        // ║    inheriting Tehran's wrong Fajr=17.7 before override.         ║
         // ║                                                                  ║
-        // ║  Reference: Kemenag Jakarta (used by Google for Indonesia)      ║
-        // ║  Also added: MUIS/Singapore (Fajr=20°, Isha=18°, same angles)  ║
-        // ║              Diyanet/Turkey, Gulf/Dubai for completeness        ║
+        // ║  BUG D — Dubai() has built-in +3min adjustments on sunrise,    ║
+        // ║    Dhuhr, Asr, Maghrib. These are UAE-IACAD official offsets.  ║
+        // ║    Correct to keep as-is (matches UAE official schedule).       ║
+        // ║                                                                  ║
+        // ║  BUG E — Singapore() in adhan returns Fajr=20°, Isha=18°       ║
+        // ║    which matches MUIS exactly. Using it directly is correct.    ║
+        // ║    Kemenag custom also uses 20°/18° — both are correct.         ║
+        // ║                                                                  ║
+        // ║  All method existence confirmed: Dubai(), Singapore(), Turkey(), ║
+        // ║  Tehran() are all present in adhan@4.4.3 (confirmed via         ║
+        // ║  unpkg TypeScript definition file).                              ║
         // ╚══════════════════════════════════════════════════════════════════╝
         function getCalcParams(name) {
             var params;
+            var skipMadhabOverride = false; // Shia methods handle their own Asr
+
             switch (name) {
 
                 // ── Indonesia — Kemenag Jakarta ──────────────────────────
-                // Standard used by the Indonesian Ministry of Religious Affairs.
-                // Angles verified against: https://bimasislam.kemenag.go.id/
-                // Fajr: 20°  Isha: 18°
+                // Indonesian Ministry of Religious Affairs standard.
+                // Fajr: 20°  Isha: 18°  (verified vs Google/bimasislam.kemenag.go.id)
+                // Using adhan.Other() as base to avoid inheriting any preset
+                // adjustments from another method.
                 case 'Kemenag': {
-                    params = adhan.CalculationMethod.MuslimWorldLeague();
+                    params = adhan.CalculationMethod.Other();
                     params.fajrAngle = 20;
                     params.ishaAngle = 18;
-                    params.ishaInterval = 0;
                     break;
                 }
 
-                // ── Singapore — MUIS ────────────────────────────────────
-                // Majlis Ugama Islam Singapura.
-                // Same angles as Kemenag: Fajr=20°, Isha=18°.
+                // ── Singapore — MUIS (Majlis Ugama Islam Singapura) ──────
+                // adhan's built-in Singapore() method: Fajr=20°, Isha=18°.
+                // Same angles as Kemenag. Also used in Malaysia/Indonesia by MUIS.
                 case 'Singapore': {
                     params = adhan.CalculationMethod.Singapore();
                     break;
                 }
 
-                // ── Turkey — Diyanet İşleri Başkanlığı ─────────────────
+                // ── Turkey — Diyanet İşleri Başkanlığı ──────────────────
+                // adhan's built-in Turkey() approximation.
+                // Note: adhan docs state this is an approximation of Diyanet,
+                // less accurate outside Turkey proper.
                 case 'DIYANET': {
                     params = adhan.CalculationMethod.Turkey();
                     break;
                 }
 
-                // ── Gulf / Dubai ─────────────────────────────────────────
-                // UAE & Gulf: Fajr=18.2°, Isha=18.2°
+                // ── Gulf / Dubai — UAE IACAD ─────────────────────────────
+                // adhan's built-in Dubai() method: Fajr=18.2°, Isha=18.2°,
+                // plus official +3 min offsets on sunrise/dhuhr/asr/maghrib
+                // as per UAE IACAD (Islamic Affairs & Charitable Activities Dept).
                 case 'GULF': {
                     params = adhan.CalculationMethod.Dubai();
                     break;
                 }
 
-                // ── Jafari (Shia) ────────────────────────────────────────
+                // ── Jafari — Shia Ithna-Ashari ──────────────────────────
+                // Correct angles per praytimes.org and Islamic academic sources:
+                //   Fajr:    16°  (morning twilight disappears)
+                //   Isha:    14°  (evening twilight disappears)
+                //   Maghrib: 4°   (eastern sky redness overhead — NOT Tehran's 4.5°)
+                //
+                // Using adhan.Other() as base (NOT Tehran()) to avoid inheriting
+                // Tehran's fajrAngle=17.7 and maghribAngle=4.5 before overriding.
+                // We set every angle explicitly for clarity and correctness.
+                //
+                // madhab override skipped: Jafari Asr = shadow factor 1 (same
+                // numerical result as Shafi), but semantically distinct.
                 case 'Jafari': {
+                    params = adhan.CalculationMethod.Other();
+                    params.fajrAngle    = 16;   // Shia Ithna-Ashari standard
+                    params.ishaAngle    = 14;   // Shia Ithna-Ashari standard
+                    params.maghribAngle = 4;    // Eastern redness overhead (not 4.5°)
+                    skipMadhabOverride  = true;
+                    break;
+                }
+
+                // ── Tehran — Institute of Geophysics, Univ. of Tehran ────
+                // adhan's built-in Tehran() method:
+                //   Fajr:    17.7°
+                //   Isha:    14°   (angle-based, not interval)
+                //   Maghrib: 4.5°  (sun below horizon angle for redness disappearance)
+                //
+                // This is also a Shia method. Maghrib angle handled internally
+                // by Tehran(). No overrides needed. madhab override skipped
+                // (Tehran Asr = shadow factor 1, same as Shafi numerically).
+                case 'Tehran': {
                     params = adhan.CalculationMethod.Tehran();
-                    params.fajrAngle    = 16;
-                    params.ishaAngle    = 14;
-                    params.maghribAngle = 4;
-                    params.ishaInterval = 0;
+                    skipMadhabOverride = true;
                     break;
                 }
 
@@ -718,10 +766,17 @@
                 case 'ISNA':    params = adhan.CalculationMethod.NorthAmerica();      break;
                 case 'Makkah':  params = adhan.CalculationMethod.UmmAlQura();         break;
                 case 'Egypt':   params = adhan.CalculationMethod.Egyptian();          break;
-                case 'Tehran':  params = adhan.CalculationMethod.Tehran();            break;
+                case 'MWL':
                 default:        params = adhan.CalculationMethod.MuslimWorldLeague(); break;
             }
-            params.madhab = adhan.Madhab.Shafi;
+
+            // Apply Shafi madhab (shadow factor 1, earlier Asr) for all Sunni
+            // methods. Skipped for Jafari/Tehran which are Shia — they use the
+            // same shadow factor numerically but are semantically different.
+            if (!skipMadhabOverride) {
+                params.madhab = adhan.Madhab.Shafi;
+            }
+
             return params;
         }
 
