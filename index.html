@@ -354,44 +354,146 @@
 
     <script>
     (function() {
-        // ------------------------------------------------------------------
-        // Kaaba 3D icon — geometrically accurate reconstruction
-        //
-        // Real-world proportions (approximate, from survey data):
-        //   Width (NE–SW walls): ~11.03 m
-        //   Depth (NW–SE walls): ~12.86 m  → ratio ≈ 1.17 : 1
-        //   Height: ~13.1 m → relative to width ≈ 1.19 : 1
-        //
-        // Key architectural features modelled:
-        //   • Correct tall proportions (height > width > depth)
-        //   • Kaaba is rotated ~45° so corners face cardinal directions
-        //     (N, S, E, W corners) — Rukn al-Aswad (Black Stone) is at
-        //     the East corner
-        //   • Kiswah (black cloth) with subtle vertical panel seams
-        //   • Hizam (gold belt) at ~2/3 height (~8.5 m from ground)
-        //   • Quranic calligraphy band just below and above the Hizam
-        //   • Door (Bab al-Kaaba) on the NE face, elevated ~2.25 m
-        //     above ground, flanked by thin gold frame
-        //   • Hajar al-Aswad (Black Stone) set in silver/gold frame
-        //     at the East corner, ~1.1 m above the base
-        //   • Mizab al-Rahma (gold rainspout) on the NW top edge
-        //   • Shadhdharwan — the low marble skirt/plinth at base
-        // ------------------------------------------------------------------
+
+        // ─────────────────────────────────────────────────────────────────────
+        // al-iṭār al-fiḍḍī — teardrop silver frame builder
+        // Variant 03: antique oxidised · deep left near corner · high quality
+        // ─────────────────────────────────────────────────────────────────────
+        function makeTearDropFrame(opts) {
+            opts = opts || {};
+            var W     = opts.w     !== undefined ? opts.w     : 0.215;
+            var H     = opts.h     !== undefined ? opts.h     : 0.270;
+            var CONV  = opts.conv  !== undefined ? opts.conv  : 0.048;
+            var HOLR  = opts.holr  !== undefined ? opts.holr  : 0.050;
+            var THICK = opts.thick !== undefined ? opts.thick : 0.016;
+
+            var mSilver = opts.mSilver;
+            var mGold   = opts.mGold;
+            var mDark   = opts.mDark;
+
+            var grp = new THREE.Group();
+
+            // Teardrop taper function: pointed top (t=0), round bottom (t=PI)
+            function taper(t) {
+                return Math.pow(Math.abs(Math.sin(t * 0.5)), 0.45);
+            }
+
+            // ── Convex front face ──────────────────────────────────────────
+            var faceGeo = new THREE.CircleGeometry(1.0, 96);
+            var posArr  = faceGeo.attributes.position;
+            for (var vi = 0; vi < posArr.count; vi++) {
+                var vx = posArr.getX(vi);
+                var vy = posArr.getY(vi);
+                var r  = Math.sqrt(vx * vx + vy * vy);
+                if (r < 0.001) {
+                    posArr.setXYZ(vi, 0, 0, CONV);
+                    continue;
+                }
+                var ang    = Math.atan2(vx / W, -vy / H);
+                var tap    = taper(ang);
+                var boundX = W * Math.sin(ang) * tap;
+                var boundY = -H * Math.cos(ang);
+                var convZ  = CONV * Math.exp(-r * r * 2.8);
+                posArr.setXYZ(vi, boundX * r, boundY * r, convZ);
+            }
+            faceGeo.computeVertexNormals();
+            grp.add(new THREE.Mesh(faceGeo, mSilver));
+
+            // ── Flat backing plate ─────────────────────────────────────────
+            var backShape = new THREE.Shape();
+            for (var bi = 0; bi <= 96; bi++) {
+                var bt  = (bi / 96) * Math.PI * 2;
+                var bx  = W * Math.sin(bt) * taper(bt);
+                var by  = -H * Math.cos(bt);
+                if (bi === 0) backShape.moveTo(bx, by); else backShape.lineTo(bx, by);
+            }
+            backShape.closePath();
+            var backMesh = new THREE.Mesh(new THREE.ShapeGeometry(backShape, 64), mSilver);
+            backMesh.position.z = -THICK;
+            grp.add(backMesh);
+
+            // ── Gold border ring (TubeGeometry along teardrop edge) ────────
+            var borderPts = [];
+            for (var ri = 0; ri <= 120; ri++) {
+                var rt  = (ri / 120) * Math.PI * 2;
+                var tap2 = taper(rt);
+                borderPts.push(new THREE.Vector3(
+                    W * Math.sin(rt) * tap2 * 1.032,
+                   -H * Math.cos(rt) * 1.032,
+                    0.004
+                ));
+            }
+            borderPts.push(borderPts[0].clone());
+            var borderCurve = new THREE.CatmullRomCurve3(borderPts, true);
+            grp.add(new THREE.Mesh(
+                new THREE.TubeGeometry(borderCurve, 160, 0.011, 12, true),
+                mGold
+            ));
+
+            // ── Central stone cavity (dark recessed circle) ────────────────
+            var holMesh = new THREE.Mesh(new THREE.CircleGeometry(HOLR, 48), mDark);
+            holMesh.position.set(0, H * 0.05, CONV * 0.78);
+            grp.add(holMesh);
+
+            // Stone fragments inside cavity
+            var fragMat = new THREE.MeshStandardMaterial({
+                color: 0x100c0e, roughness: 0.30, metalness: 0.04,
+                emissive: 0x060304, emissiveIntensity: 0.18
+            });
+            var frags = [
+                [0,           0,            0.006, 0.033, 0.027, 0.010],
+                [ HOLR*0.22,  HOLR*0.15,    0.008, 0.021, 0.017, 0.008],
+                [-HOLR*0.20, -HOLR*0.18,    0.007, 0.019, 0.015, 0.008],
+                [ HOLR*0.12, -HOLR*0.26,    0.006, 0.015, 0.012, 0.007]
+            ];
+            frags.forEach(function(fd) {
+                var fg = new THREE.Mesh(new THREE.SphereGeometry(1, 20, 20), fragMat);
+                fg.position.set(fd[0], fd[1] + H * 0.05, CONV * 0.78 + fd[2]);
+                fg.scale.set(fd[3], fd[4], fd[5]);
+                grp.add(fg);
+            });
+
+            // ── Subtle inner rim shadow ring ───────────────────────────────
+            // A slightly smaller, darker torus hugging the inside of the gold border
+            var innerPts = [];
+            for (var ii = 0; ii <= 120; ii++) {
+                var it  = (ii / 120) * Math.PI * 2;
+                var itp = taper(it);
+                innerPts.push(new THREE.Vector3(
+                    W * Math.sin(it) * itp * 0.97,
+                   -H * Math.cos(it) * 0.97,
+                    CONV * 0.05
+                ));
+            }
+            innerPts.push(innerPts[0].clone());
+            var innerCurve = new THREE.CatmullRomCurve3(innerPts, true);
+            var innerRimMat = new THREE.MeshStandardMaterial({
+                color: 0x1a1410, roughness: 0.85, metalness: 0.0,
+                transparent: true, opacity: 0.55
+            });
+            grp.add(new THREE.Mesh(
+                new THREE.TubeGeometry(innerCurve, 120, 0.008, 8, true),
+                innerRimMat
+            ));
+
+            return grp;
+        }
+
+        // ─────────────────────────────────────────────────────────────────────
+        // Main Kaaba icon generator
+        // ─────────────────────────────────────────────────────────────────────
         function generateRingIconCanvas() {
-            const RENDER_SIZE = 512;
-            const canvas = document.createElement('canvas');
-            canvas.width  = RENDER_SIZE;
-            canvas.height = RENDER_SIZE;
+            var RENDER_SIZE = 512;
+            var canvas = document.createElement('canvas');
+            canvas.width = canvas.height = RENDER_SIZE;
 
-            const scene  = new THREE.Scene();
-
-            // Camera kept at same angle as original
-            const camera = new THREE.PerspectiveCamera(42, 1, 0.1, 100);
+            var scene  = new THREE.Scene();
+            var camera = new THREE.PerspectiveCamera(42, 1, 0.1, 100);
             camera.position.set(4.5, 2.7, 6.8);
             camera.lookAt(0, 1.6, 0);
 
-            const renderer = new THREE.WebGLRenderer({
-                canvas, alpha: true, antialias: true,
+            var renderer = new THREE.WebGLRenderer({
+                canvas: canvas, alpha: true, antialias: true,
                 powerPreference: 'high-performance'
             });
             renderer.setSize(RENDER_SIZE, RENDER_SIZE);
@@ -399,256 +501,171 @@
             renderer.setClearColor(0x000000, 0);
             renderer.shadowMap.enabled = true;
 
-            // ── Lighting ──────────────────────────────────────────────────
-            scene.add(new THREE.AmbientLight(0xffffff, 0.30));
+            // ── Lighting — night floodlit scene ───────────────────────────
+            scene.add(new THREE.AmbientLight(0xffffff, 0.08));
 
-            const sun = new THREE.DirectionalLight(0xfff5e0, 1.1);
-            sun.position.set(-3, 6, 9);
-            scene.add(sun);
+            var l1 = new THREE.DirectionalLight(0xffeebb, 0.40);
+            l1.position.set(-1, 3, 10); scene.add(l1);
 
-            const fill = new THREE.DirectionalLight(0xd0e8ff, 0.45);
-            fill.position.set(5, 4, 4);
-            scene.add(fill);
+            var l2 = new THREE.DirectionalLight(0xd0e8ff, 1.20);
+            l2.position.set(3, 2, 8); scene.add(l2);
 
-            const back = new THREE.DirectionalLight(0xffeedd, 0.25);
-            back.position.set(-4, 3, -8);
-            scene.add(back);
+            var l3 = new THREE.DirectionalLight(0xffeedd, 0.18);
+            l3.position.set(-4, 3, -8); scene.add(l3);
 
-            // ── Dimensions (scene units) ──────────────────────────────────
-            // Real ratios: W=11.03, D=12.86, H=13.1
-            // Scaled so H ≈ 3.0 gives a good icon size
-            const SCALE = 3.0 / 13.1;
-            const KW = 11.03 * SCALE;   // ~2.53  (NE-SW axis)
-            const KD = 12.86 * SCALE;   // ~2.95  (NW-SE axis)
-            const KH = 13.1  * SCALE;   // 3.00
+            // Warm fill from left to illuminate the frame region
+            var l4 = new THREE.DirectionalLight(0xffe8cc, 0.55);
+            l4.position.set(-6, 2, 5); scene.add(l4);
 
-            // Kaaba corners point toward cardinal directions → rotate 45°
-            const ROT_Y = Math.PI / 4;
+            // ── Scene scale ───────────────────────────────────────────────
+            var SC = 3.0 / 13.1;
+            var KW = 11.03 * SC;
+            var KD = 12.86 * SC;
+            var KH = 13.1  * SC;
+            var ROT_Y  = Math.PI / 4;
+            var PLINTH = 0.25;
+            var HY = KH * 0.648;
+            var HH = KH * 0.040;
 
-            // Hizam belt height from ground: ~8.5 m
-            const HIZAM_Y  = 8.5  * SCALE;   // ~1.95
-            const HIZAM_H  = 0.52 * SCALE;   // thick gold band
-            const PLINTH_H = 0.25;            // Shadhdharwan marble plinth
+            // ── Materials ─────────────────────────────────────────────────
+            var mKis = new THREE.MeshStandardMaterial({ color:0x050508, roughness:0.75, metalness:0.05 });
+            var mGld = new THREE.MeshStandardMaterial({ color:0xd4960c, emissive:0x5a3800, roughness:0.22, metalness:0.92, emissiveIntensity:0.20 });
+            var mGlT = new THREE.MeshStandardMaterial({ color:0xd4a830, emissive:0x2e1c00, roughness:0.20, metalness:0.90, emissiveIntensity:0.20 });
+            var mMrb = new THREE.MeshStandardMaterial({ color:0xd8cfc4, roughness:0.40, metalness:0.05 });
+            var mWod = new THREE.MeshStandardMaterial({ color:0x6b4a1e, roughness:0.45, metalness:0.15 });
+            var mSmM = new THREE.MeshStandardMaterial({ color:0x191408, roughness:0.90, metalness:0.00 });
+            var mDrk = new THREE.MeshStandardMaterial({ color:0x030205, roughness:0.95, metalness:0.00 });
 
-            // ── Materials ────────────────────────────────────────────────
-            const kiswahMat = new THREE.MeshStandardMaterial({
-                color:     0x050508,
-                roughness: 0.75,
-                metalness: 0.05,
+            // Antique oxidised silver — variant 03
+            var mSil = new THREE.MeshStandardMaterial({
+                color:     0x888078,
+                emissive:  0x050404,
+                roughness: 0.52,
+                metalness: 0.62,
+                emissiveIntensity: 0.03,
+                side: THREE.DoubleSide
             });
 
-            const goldMat = new THREE.MeshStandardMaterial({
-                color:     0xc8952a,
-                emissive:  0x3d2800,
-                roughness: 0.25,
-                metalness: 0.85,
-                emissiveIntensity: 0.15,
+            // Gold border — slightly warmer than main gold
+            var mBorder = new THREE.MeshStandardMaterial({
+                color: 0xb08820, emissive: 0x3a2200,
+                roughness: 0.30, metalness: 0.82, emissiveIntensity: 0.18
             });
 
-            const goldTrimMat = new THREE.MeshStandardMaterial({
-                color:     0xd4a830,
-                emissive:  0x2e1c00,
-                roughness: 0.20,
-                metalness: 0.90,
-                emissiveIntensity: 0.2,
-            });
-
-            const marbleMat = new THREE.MeshStandardMaterial({
-                color:     0xd8cfc4,
-                roughness: 0.4,
-                metalness: 0.05,
-            });
-
-            const doorMat = new THREE.MeshStandardMaterial({
-                color:     0x6b4a1e,
-                roughness: 0.45,
-                metalness: 0.15,
-            });
-
-            const stoneMat = new THREE.MeshStandardMaterial({
-                color:     0x0e0c0c,
-                roughness: 0.20,
-                metalness: 0.12,
-                emissive:  0x060404,
-            });
-
-            const silverMat = new THREE.MeshStandardMaterial({
-                color:     0xb0a898,
-                roughness: 0.22,
-                metalness: 0.88,
-            });
-
-            // ── Helper: add mesh to scene with optional Y-rotation ────────
-            function add(mesh, ry) {
+            function box(w, h, d, m) { return new THREE.Mesh(new THREE.BoxGeometry(w, h, d), m); }
+            function put(mesh, x, y, z, ry) {
+                mesh.position.set(x || 0, y || 0, z || 0);
                 if (ry !== undefined) mesh.rotation.y = ry;
                 scene.add(mesh);
-                return mesh;
             }
 
-            // ── Shadhdharwan plinth ───────────────────────────────────────
-            // Slightly wider than body, marble finish, ~25 cm tall
-            const plinthGeo = new THREE.BoxGeometry(KW + 0.18, PLINTH_H, KD + 0.18);
-            const plinth = new THREE.Mesh(plinthGeo, marbleMat);
-            plinth.position.y = PLINTH_H / 2;
-            add(plinth, ROT_Y);
+            // ── Plinth ────────────────────────────────────────────────────
+            put(box(KW+0.18, PLINTH, KD+0.18, mMrb), 0, PLINTH/2, 0, ROT_Y);
 
-            // ── Main Kaaba body (Kiswah) ──────────────────────────────────
-            const bodyGeo = new THREE.BoxGeometry(KW, KH, KD);
-            const body = new THREE.Mesh(bodyGeo, kiswahMat);
-            body.position.y = KH / 2 + PLINTH_H;
-            add(body, ROT_Y);
+            // ── Body ──────────────────────────────────────────────────────
+            var bGeo = new THREE.BoxGeometry(KW, KH, KD);
+            put(new THREE.Mesh(bGeo, mKis), 0, KH/2+PLINTH, 0, ROT_Y);
 
-            // Subtle edge lines on body
-            const edges = new THREE.EdgesGeometry(bodyGeo);
-            const edgeLines = new THREE.LineSegments(
-                edges,
-                new THREE.LineBasicMaterial({ color: 0x1a1a22, linewidth: 1 })
+            var edges = new THREE.LineSegments(
+                new THREE.EdgesGeometry(bGeo),
+                new THREE.LineBasicMaterial({ color: 0x1a1a22 })
             );
-            edgeLines.rotation.y = ROT_Y;
-            edgeLines.position.y = KH / 2 + PLINTH_H;
-            scene.add(edgeLines);
+            edges.position.y = KH/2+PLINTH;
+            edges.rotation.y = ROT_Y;
+            scene.add(edges);
 
-            // ── Kiswah vertical panel seams ───────────────────────────────
-            // 4 faces, each divided into ~3 panels with thin gold-thread seams
-            // We approximate with very thin dark lines on each face
-            const seamMat = new THREE.MeshStandardMaterial({
-                color: 0x1a1506, roughness: 0.9, metalness: 0.0
-            });
-            const seamW = 0.015, seamH = KH * 0.92;
-            // NE face (z = +KD/2), SE face (x = +KW/2) — visible faces
+            // Kiswah panel seams
             [
-                // NE face: two vertical seams dividing into 3 panels
-                { x: -KW * 0.18, y: KH/2 + PLINTH_H, z:  KD/2 + 0.005 },
-                { x:  KW * 0.18, y: KH/2 + PLINTH_H, z:  KD/2 + 0.005 },
-                // NW face
-                { x: -KD/2 - 0.005, y: KH/2 + PLINTH_H, z: -KW * 0.18 },
-                { x: -KD/2 - 0.005, y: KH/2 + PLINTH_H, z:  KW * 0.18 },
-            ].forEach(pos => {
-                const sg = new THREE.BoxGeometry(seamW, seamH, seamW);
-                const sm = new THREE.Mesh(sg, seamMat);
-                sm.position.set(pos.x, pos.y, pos.z);
+                [-KW*0.18, KH/2+PLINTH,  KD/2+0.005],
+                [ KW*0.18, KH/2+PLINTH,  KD/2+0.005],
+                [-KD/2-0.005, KH/2+PLINTH, -KW*0.18],
+                [-KD/2-0.005, KH/2+PLINTH,  KW*0.18]
+            ].forEach(function(pos) {
+                var sm = box(0.015, KH*0.92, 0.015, mSmM);
+                sm.position.set(pos[0], pos[1], pos[2]);
                 sm.rotation.y = ROT_Y;
                 scene.add(sm);
             });
 
-            // ── Hizam (gold belt) ─────────────────────────────────────────
-            // Slightly proud of the Kiswah, wraps all 4 sides
-            const hisamGeo = new THREE.BoxGeometry(KW + 0.06, HIZAM_H, KD + 0.06);
-            const hizam = new THREE.Mesh(hisamGeo, goldMat);
-            hizam.position.y = HIZAM_Y + HIZAM_H / 2 + PLINTH_H;
-            add(hizam, ROT_Y);
+            // ── Hizam ─────────────────────────────────────────────────────
+            put(box(KW+0.06, HH, KD+0.06, mGld), 0, HY+HH/2+PLINTH, 0, ROT_Y);
+            put(box(KW+0.04, 0.07, KD+0.04, mGlT), 0, HY+HH/2+PLINTH+(HH/2+0.07/2+0.01), 0, ROT_Y);
+            put(box(KW+0.04, 0.07, KD+0.04, mGlT), 0, HY+HH/2+PLINTH-(HH/2+0.07/2+0.01), 0, ROT_Y);
 
-            // Thin calligraphy border strips just above and below the Hizam
-            const calBorderH = 0.07;
-            [-1, 1].forEach(sign => {
-                const cbGeo = new THREE.BoxGeometry(KW + 0.04, calBorderH, KD + 0.04);
-                const cb = new THREE.Mesh(cbGeo, goldTrimMat);
-                cb.position.y = HIZAM_Y + HIZAM_H / 2 + PLINTH_H
-                    + sign * (HIZAM_H / 2 + calBorderH / 2 + 0.01);
-                add(cb, ROT_Y);
+            // ── Door ──────────────────────────────────────────────────────
+            var DW = 1.93*SC, DH = 3.10*SC, DE = 2.25*SC+PLINTH;
+            var dg = new THREE.Group();
+            dg.rotation.y = ROT_Y;
+            scene.add(dg);
+
+            var dfr = box(DW+0.10, DH+0.10, 0.04, mGld);
+            dfr.position.set(0, DE+DH/2, KD/2+0.04);
+            dg.add(dfr);
+
+            var dpan = box(DW, DH, 0.06, mWod);
+            dpan.position.set(0, DE+DH/2, KD/2+0.06);
+            dg.add(dpan);
+
+            var dp1 = box(DW*0.35, DH*0.85, 0.02, mGlT);
+            dp1.position.set(-DW*0.22, DE+DH/2, KD/2+0.10);
+            dg.add(dp1);
+            var dp2 = box(DW*0.35, DH*0.85, 0.02, mGlT);
+            dp2.position.set( DW*0.22, DE+DH/2, KD/2+0.10);
+            dg.add(dp2);
+
+            var sill = box(DW+0.12, 0.06, 0.14, mGld);
+            sill.position.set(0, DE+0.03, KD/2+0.04);
+            dg.add(sill);
+
+            // ── Mizab ─────────────────────────────────────────────────────
+            var mg = new THREE.Group();
+            mg.rotation.y = ROT_Y;
+            scene.add(mg);
+            var miz = box(0.18, 0.10, 0.55, mGld);
+            miz.position.set(0, KH+PLINTH-0.05, -KD/2-0.20);
+            miz.rotation.x = 0.12;
+            mg.add(miz);
+
+            // ── Roof ──────────────────────────────────────────────────────
+            put(box(KW+0.04, 0.12, KD+0.04, mKis), 0, KH+PLINTH+0.06, 0, ROT_Y);
+            put(box(KW+0.10, 0.07, KD+0.10, mGlT), 0, KH+PLINTH+0.14, 0, ROT_Y);
+
+            // ════════════════════════════════════════════════════════════════
+            // al-iṭār al-fiḍḍī
+            //
+            // Variant 03: antique oxidised silver · deep left · near corner
+            //
+            // Placement on the door face (local +Z = KD/2 after ROT_Y),
+            // shifted left in local-x by -1.10 units.
+            // Height: 1.5 SC + PLINTH  ≈ lower-wall stone mount position.
+            //
+            // The frame group shares the same ROT_Y as the Kaaba body,
+            // so local -x shift moves it leftward as seen by the camera.
+            // ════════════════════════════════════════════════════════════════
+
+            var STONE_Y  = 1.5 * SC + PLINTH;   // height above ground
+            var OFFSET_X = -1.28;                // very deep left, near corner (variant 04)
+
+            var stoneGrp = new THREE.Group();
+            stoneGrp.rotation.y = ROT_Y;
+            scene.add(stoneGrp);
+
+            var faceGrp = new THREE.Group();
+            faceGrp.position.set(OFFSET_X, STONE_Y, KD / 2);
+            faceGrp.rotation.y = 0;
+            stoneGrp.add(faceGrp);
+
+            var tearFrame = makeTearDropFrame({
+                w:       0.215,
+                h:       0.270,
+                conv:    0.048,
+                holr:    0.050,
+                thick:   0.016,
+                mSilver: mSil,
+                mGold:   mBorder,
+                mDark:   mDrk
             });
-
-            // ── Door (Bab al-Kaaba) ───────────────────────────────────────
-            // On the NE face (the face facing toward camera's right side).
-            // Real: elevated ~2.25 m, centered on that face.
-            // Door dims: ~1.93 m wide × ~3.10 m tall
-            const DOOR_W = 1.93 * SCALE;
-            const DOOR_H = 3.10 * SCALE;
-            const DOOR_ELEV = 2.25 * SCALE + PLINTH_H;  // base of door above ground
-
-            // The NE face in our rotated frame is along z = +KD/2 rotated 45°.
-            // After 45° rotation, the face that faces roughly +z in world space
-            // is the one along local +z = KD/2.
-            // We place door geometry at local z = KD/2 + small offset,
-            // then apply the same ROT_Y rotation via a Group.
-            const doorGroup = new THREE.Group();
-            doorGroup.rotation.y = ROT_Y;
-            scene.add(doorGroup);
-
-            // Gold outer frame (slightly larger than door)
-            const frameW = DOOR_W + 0.10, frameH = DOOR_H + 0.10;
-            const frameGeo = new THREE.BoxGeometry(frameW, frameH, 0.04);
-            const frame = new THREE.Mesh(frameGeo, goldMat);
-            frame.position.set(0, DOOR_ELEV + DOOR_H / 2, KD/2 + 0.04);
-            doorGroup.add(frame);
-
-            // Door panel (wood, inset)
-            const doorGeo = new THREE.BoxGeometry(DOOR_W, DOOR_H, 0.06);
-            const door = new THREE.Mesh(doorGeo, doorMat);
-            door.position.set(0, DOOR_ELEV + DOOR_H / 2, KD/2 + 0.06);
-            doorGroup.add(door);
-
-            // Door gold decorative panels (two vertical strips)
-            const dpGeo = new THREE.BoxGeometry(DOOR_W * 0.35, DOOR_H * 0.85, 0.02);
-            [-1, 1].forEach(side => {
-                const dp = new THREE.Mesh(dpGeo, goldTrimMat);
-                dp.position.set(side * DOOR_W * 0.22, DOOR_ELEV + DOOR_H / 2, KD/2 + 0.10);
-                doorGroup.add(dp);
-            });
-
-            // Door threshold step (small gold sill)
-            const sillGeo = new THREE.BoxGeometry(DOOR_W + 0.12, 0.06, 0.14);
-            const sill = new THREE.Mesh(sillGeo, goldMat);
-            sill.position.set(0, DOOR_ELEV + 0.03, KD/2 + 0.04);
-            doorGroup.add(sill);
-
-            // ── Hajar al-Aswad (Black Stone) ─────────────────────────────
-            // Located at the East corner of the Kaaba, ~1.10 m above ground.
-            // In our 45°-rotated frame the East corner is at local (+KW/2, y, 0)
-            // → which in world coords (after 45° rot) points along +x.
-            // The stone is embedded flush at that corner edge.
-            const STONE_ELEV = 1.10 * SCALE + PLINTH_H;
-            const stoneGroup = new THREE.Group();
-            stoneGroup.rotation.y = ROT_Y;
-            scene.add(stoneGroup);
-
-            // Silver/gold oval frame (Istam)
-            const frameSGeo = new THREE.TorusGeometry(0.155, 0.038, 32, 64);
-            const frameS = new THREE.Mesh(frameSGeo, silverMat);
-            // East corner: local x = +KW/2, z = 0 but we push slightly outward
-            frameS.position.set(KW/2 + 0.02, STONE_ELEV, 0);
-            // Orient to be flat against the corner wall face (corner faces 45° between x and z)
-            frameS.rotation.set(0, -Math.PI / 4, Math.PI / 2);
-            frameS.scale.set(1.0, 0.72, 1.0); // oval
-            stoneGroup.add(frameS);
-
-            // The stone itself
-            const stoneGeo = new THREE.SphereGeometry(0.13, 64, 64);
-            const stoneM = new THREE.Mesh(stoneGeo, stoneMat);
-            stoneM.scale.set(0.85, 0.60, 0.40);
-            stoneM.position.set(KW/2 + 0.03, STONE_ELEV, 0);
-            stoneM.rotation.y = -Math.PI / 4;
-            stoneGroup.add(stoneM);
-
-            // ── Mizab al-Rahma (golden rainspout) ────────────────────────
-            // On the NW top edge (local -z face at top), projects outward.
-            const mizabGroup = new THREE.Group();
-            mizabGroup.rotation.y = ROT_Y;
-            scene.add(mizabGroup);
-
-            // Spout body — a thin horizontal gold box projecting from roof edge
-            const mizabGeo = new THREE.BoxGeometry(0.18, 0.10, 0.55);
-            const mizab = new THREE.Mesh(mizabGeo, goldMat);
-            // NW face: local x = 0, z = -KD/2
-            mizab.position.set(0, KH + PLINTH_H - 0.05, -KD/2 - 0.20);
-            mizabGroup.add(mizab);
-
-            // Slight downward tilt
-            mizab.rotation.x = 0.12;
-
-            // ── Roof flat slab ────────────────────────────────────────────
-            // The Kaaba roof is flat with a slight overhang on the Hijr side.
-            // Modelled as a dark slab flush with the top.
-            const roofGeo = new THREE.BoxGeometry(KW + 0.04, 0.12, KD + 0.04);
-            const roof = new THREE.Mesh(roofGeo, kiswahMat);
-            roof.position.y = KH + PLINTH_H + 0.06;
-            add(roof, ROT_Y);
-
-            // Gold rim around roof edge
-            const roofRimGeo = new THREE.BoxGeometry(KW + 0.10, 0.07, KD + 0.10);
-            const roofRim = new THREE.Mesh(roofRimGeo, goldTrimMat);
-            roofRim.position.y = KH + PLINTH_H + 0.14;
-            add(roofRim, ROT_Y);
+            faceGrp.add(tearFrame);
 
             // ── Render ────────────────────────────────────────────────────
             renderer.render(scene, camera);
@@ -656,16 +673,16 @@
             return canvas;
         }
 
-        // ------------------------------------------------------------------
-        // Prayer times logic (unchanged from original)
-        // ------------------------------------------------------------------
-        let lat = 21.4225, lng = 39.8262;
-        let locationTimezone = 'Asia/Riyadh';
-        let map, marker;
-        let streetLayer, satelliteLayer;
+        // ─────────────────────────────────────────────────────────────────────
+        // Prayer times logic
+        // ─────────────────────────────────────────────────────────────────────
+        var lat = 21.4225, lng = 39.8262;
+        var locationTimezone = 'Asia/Riyadh';
+        var map, marker;
+        var streetLayer, satelliteLayer;
 
         function getCalcParams(name) {
-            let params;
+            var params;
             switch (name) {
                 case 'Jafari': {
                     params = adhan.CalculationMethod.Tehran();
@@ -675,12 +692,12 @@
                     params.ishaInterval = 0;
                     break;
                 }
-                case 'Karachi': params = adhan.CalculationMethod.Karachi();           break;
-                case 'ISNA':    params = adhan.CalculationMethod.NorthAmerica();       break;
-                case 'Makkah':  params = adhan.CalculationMethod.UmmAlQura();          break;
-                case 'Egypt':   params = adhan.CalculationMethod.Egyptian();           break;
-                case 'Tehran':  params = adhan.CalculationMethod.Tehran();             break;
-                default:        params = adhan.CalculationMethod.MuslimWorldLeague();  break;
+                case 'Karachi': params = adhan.CalculationMethod.Karachi();          break;
+                case 'ISNA':    params = adhan.CalculationMethod.NorthAmerica();      break;
+                case 'Makkah':  params = adhan.CalculationMethod.UmmAlQura();         break;
+                case 'Egypt':   params = adhan.CalculationMethod.Egyptian();          break;
+                case 'Tehran':  params = adhan.CalculationMethod.Tehran();            break;
+                default:        params = adhan.CalculationMethod.MuslimWorldLeague(); break;
             }
             params.madhab = adhan.Madhab.Shafi;
             return params;
@@ -886,7 +903,7 @@
 
             initUserLocation();
 
-            // Build high-res Kaaba icon
+            // Build high-res Kaaba icon with teardrop frame
             const kaabaCanvas = generateRingIconCanvas();
             const kaabaIcon = L.icon({
                 iconUrl:     kaabaCanvas.toDataURL('image/png'),
@@ -906,8 +923,8 @@
                 $('satelliteBtn').classList.remove('active');
             });
             $('satelliteBtn').addEventListener('click', () => {
-                if (map.hasLayer(streetLayer))      map.removeLayer(streetLayer);
-                if (!map.hasLayer(satelliteLayer))  satelliteLayer.addTo(map);
+                if (map.hasLayer(streetLayer))     map.removeLayer(streetLayer);
+                if (!map.hasLayer(satelliteLayer)) satelliteLayer.addTo(map);
                 $('satelliteBtn').classList.add('active');
                 $('streetBtn').classList.remove('active');
             });
