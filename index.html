@@ -363,21 +363,26 @@
         //    ~4× the pixel density and crisp edges at any screen DPR.
         // ------------------------------------------------------------------
         function generateRingIconCanvas() {
-            // Logical display size stays 52 px — we render at 512 for ultra-crisp detail.
             const RENDER_SIZE = 512;
 
-            const W = 3.5, H = 3.0, D = 3.2, centerY = H / 2;
-            const STONE_POS = { x: -1.68, y: 0.85, z: D / 2 - 0.30 };
+            // Cube: square footprint W=D=3.2, H=3.0 (matches real Kaaba ~1:1:0.9 ratio).
+            // Camera at exactly 45° horizontal so both visible faces are equal width.
+            const W = 3.2, H = 3.0, D = 3.2;
+            const centerY = H / 2;
+
+            // ── EXACT ORIGINAL values — DO NOT CHANGE ───────────────────────
+            const STONE_POS = { x: -1.68, y: 0.85, z: D / 2 - 0.30 };  // z = 1.30
 
             const LOCKED_SIZE = {
-                radius: 0.44 * 0.95,
-                tube:   0.13 * 0.95,
-                scaleX: 1.30 * 0.95,
-                scaleY: 0.62 * 0.95,
-                scaleZ: 1.26 * 0.95,
+                radius:    0.44,
+                tube:      0.13,
+                scaleX:    1.30,
+                scaleY:    0.62,
+                scaleZ:    1.26,
                 rotationY: 0.81,
                 rotationX: 0.34,
-                yPos: 0.415
+                double:    true,
+                yPos:      0.415
             };
 
             const selectedOption = {
@@ -386,16 +391,19 @@
                 roughness: 0.27,
                 metalness: 0.82
             };
+            // ────────────────────────────────────────────────────────────────
 
-            // Off-screen canvas at full render resolution
             const canvas = document.createElement('canvas');
             canvas.width  = RENDER_SIZE;
             canvas.height = RENDER_SIZE;
 
             const scene  = new THREE.Scene();
+
+            // Camera: 45° horizontal (x=z), elevated enough to see top.
+            // lookAt slightly above base so cube fills frame nicely.
             const camera = new THREE.PerspectiveCamera(42, 1, 0.1, 100);
-            camera.position.set(4.5, 2.7, 6.8);
-            camera.lookAt(0, 1.6, 0);
+            camera.position.set(5.2, 2.7, 5.2);
+            camera.lookAt(0, 1.5, 0);
 
             const renderer = new THREE.WebGLRenderer({
                 canvas,
@@ -404,10 +412,10 @@
                 powerPreference: 'high-performance'
             });
             renderer.setSize(RENDER_SIZE, RENDER_SIZE);
-            renderer.setPixelRatio(1); // already rendering at target size
+            renderer.setPixelRatio(1);
             renderer.setClearColor(0x000000, 0);
 
-            // Lighting — identical to original
+            // Lighting — exact original
             scene.add(new THREE.AmbientLight(0xffffff, 0.25));
             const mainLight = new THREE.DirectionalLight(0xbbccee, 1.0);
             mainLight.position.set(-3, 5, 9);
@@ -419,7 +427,7 @@
             back.position.set(-4, 3, -8);
             scene.add(back);
 
-            // Kaaba body — same black
+            // ── BLACK WALLS — square footprint W=D, so it reads as a cube ───
             const cubeMat = new THREE.MeshStandardMaterial({ color: 0x0a0a0a, roughness: 0.5, metalness: 0.3 });
             const kaaba = new THREE.Mesh(new THREE.BoxGeometry(W, H, D), cubeMat);
             kaaba.position.y = centerY;
@@ -429,49 +437,47 @@
             line.position.copy(kaaba.position);
             scene.add(line);
 
-            // Gold belt
+            // ── GOLD BELT — exact original ───────────────────────────────────
             const goldMat = new THREE.MeshStandardMaterial({ color: 0xb5883b, emissive: 0x332200, roughness: 0.3, metalness: 0.7 });
             const belt = new THREE.Mesh(new THREE.BoxGeometry(W + 0.15, 0.4, D + 0.15), goldMat);
             belt.position.y = 2.0;
             scene.add(belt);
 
-            // Door
+            // ── DOOR — exact original ────────────────────────────────────────
             const doorMat = new THREE.MeshStandardMaterial({ color: 0x785a32, roughness: 0.5, metalness: 0.1 });
             const door = new THREE.Mesh(new THREE.BoxGeometry(0.61, 1.41, 0.12), doorMat);
             door.position.set(-0.5, 0.3 + 1.41 / 2, D / 2 + 0.10);
             scene.add(door);
 
-            // Black Stone
+            // ── BLACK STONE — exact original ─────────────────────────────────
             const stoneMat = new THREE.MeshStandardMaterial({ color: 0x1a1a1a, roughness: 0.25, metalness: 0.15, emissive: 0x050505 });
             const stone = new THREE.Mesh(new THREE.SphereGeometry(0.32, 128, 128), stoneMat);
             stone.scale.set(0.9, 0.55, 0.35);
             stone.position.set(STONE_POS.x, STONE_POS.y, STONE_POS.z);
             scene.add(stone);
 
-            // Brass ring — same shape, higher-poly torus for smoothness
+            // ── BRASS RING — exact original ───────────────────────────────────
             const ringMat = new THREE.MeshStandardMaterial({
-                color:            selectedOption.color,
-                emissive:         selectedOption.emissive,
-                roughness:        selectedOption.roughness,
-                metalness:        selectedOption.metalness,
-                emissiveIntensity: 0.2
+                color:     selectedOption.color,
+                emissive:  selectedOption.emissive,
+                roughness: selectedOption.roughness,
+                metalness: selectedOption.metalness
             });
 
-            function makeTorus(radiusFactor, tubeFactor) {
-                const geo = new THREE.TorusGeometry(
-                    LOCKED_SIZE.radius * radiusFactor,
-                    LOCKED_SIZE.tube   * tubeFactor,
-                    128, 256, Math.PI * 2   // ← 128 radial, 256 tubular segments for 512px render
-                );
-                const t = new THREE.Mesh(geo, ringMat);
-                t.position.set(STONE_POS.x, LOCKED_SIZE.yPos, STONE_POS.z);
-                t.rotation.set(LOCKED_SIZE.rotationX, LOCKED_SIZE.rotationY, 0);
-                t.scale.set(LOCKED_SIZE.scaleX, LOCKED_SIZE.scaleY, LOCKED_SIZE.scaleZ);
-                return t;
-            }
+            const torusGeo = new THREE.TorusGeometry(LOCKED_SIZE.radius, LOCKED_SIZE.tube, 128, 256, Math.PI * 2);
+            const torus = new THREE.Mesh(torusGeo, ringMat);
+            torus.position.set(STONE_POS.x, LOCKED_SIZE.yPos, STONE_POS.z);
+            torus.rotation.y = LOCKED_SIZE.rotationY;
+            torus.rotation.x = LOCKED_SIZE.rotationX;
+            torus.scale.set(LOCKED_SIZE.scaleX, LOCKED_SIZE.scaleY, LOCKED_SIZE.scaleZ);
+            scene.add(torus);
 
-            scene.add(makeTorus(1.00, 1.0));
-            scene.add(makeTorus(0.96, 0.8));
+            const torus2Geo = new THREE.TorusGeometry(LOCKED_SIZE.radius * 0.96, LOCKED_SIZE.tube * 0.8, 128, 256);
+            const torus2 = new THREE.Mesh(torus2Geo, ringMat);
+            torus2.position.copy(torus.position);
+            torus2.rotation.copy(torus.rotation);
+            torus2.scale.copy(torus.scale);
+            scene.add(torus2);
 
             renderer.render(scene, camera);
             renderer.dispose();
